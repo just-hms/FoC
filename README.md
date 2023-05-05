@@ -1,2 +1,2 @@
-# foc
+# FoC
 Foundation of Cybersecuity project
