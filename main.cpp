@@ -4,38 +4,39 @@
 #include <chrono>
 #include <thread>
 
-#include "lib/endpoint.cpp"
+#include "network/server.cpp"
+#include "network/client.cpp"
 
+int server_port = 101012;
 
-auto client1 = new Endpoint("4040");
-
-void client_call_back(std::string message){
-    client1->Send("ping");
-}
-
-void server_message_callback(std::string message){
+std::string messageHandler(std::string message){
     if (message != "ping"){
-        return;
+        return "";
     }
-    std::cout << "pong" << std::endl;
+    return "pong";
 }
-
 
 int main() {
-    auto server = new Endpoint("5050");
-    server->Message(server_message_callback); 
+    auto client = new Client(
+        "127.0.0.1", 
+        server_port
+    );
+    
+    auto server = new Server(server_port);
+    server->SetHandler(messageHandler); 
 
-    // start the serve in another thread to do the later actions
+    // start the server in another thread to do the next actions
     std::thread server_thread([server](){
-        server->Start();
+        server->Listen();
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-    client1->Connect("127.0.0.1", "5050");
-    client1->Input(client_call_back);
+    client->Connect();
     
-    client1->StartInputLoop();
+    auto res = client->Request("ping");
 
+    std::cout << res << std::endl;
+    
     server_thread.join();
     return 0;
 }
