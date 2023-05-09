@@ -15,7 +15,7 @@ typedef std::function<std::string(std::string)> message_handler;
 
 class Server {
 private:
-    int sd;
+    int listener;
     int port;
     message_handler message_callback;
     char buffer[BUF_LEN];
@@ -24,12 +24,12 @@ public:
     
     Server(int port) {
         // create a non blocking socket
-        this->sd = socket(
+        this->listener = socket(
             AF_INET, 
             SOCK_STREAM | SOCK_NONBLOCK,
             0
         );
-        if (this->sd == -1) {
+        if (this->listener == -1) {
             std::cerr << "Failed to create socket " << std::endl;
             exit(EXIT_FAILURE);
         }
@@ -41,7 +41,7 @@ public:
         address.sin_port = htons(port);
 
         auto res = bind(
-            this->sd, 
+            this->listener, 
             (sockaddr*) &address, 
             sizeof(address)
         );
@@ -54,14 +54,14 @@ public:
     void Listen() {
         fd_set master, read_fds;
          
-        listen(this->sd, 10);
+        listen(this->listener, 10);
 
         FD_ZERO(&master);
         FD_ZERO(&read_fds);
 
-        FD_SET(this->sd, &master);
+        FD_SET(this->listener, &master);
 
-        auto fdmax = sd;          
+        auto fdmax = listener;          
 
         while(true){
             read_fds = master;     
@@ -74,24 +74,27 @@ public:
                 NULL
             );
 
-            for(int i = 0; i <= fdmax; i++) {  
-                if(i == this->sd) {
-                    this->accept_new_connection(
-                        &master, 
-                        &fdmax
-                    );
+            for(int fd = 0; fd <= fdmax; fd++) {  
+                if(fd == this->listener) {
+                    auto sd = this->accept_new_connection(&master);
+                    if(sd > fdmax){ 
+                        fdmax = sd; 
+                    }
                     continue;
                 }
                 
+                // receving a message
                 int bytes_received = recv(
-                    i, 
+                    fd, 
                     this->buffer, 
                     sizeof(this->buffer), 
                     0
                 );
 
-                // TODO
-                // - add 0 check and close socket
+                if (bytes_received == 0) {
+                    FD_CLR(fd, &master);
+                    close(fd);
+                }
 
                 if (bytes_received == -1) {
                     std::cerr << "Failed to receive response " << std::endl;
@@ -101,9 +104,7 @@ public:
                 std::string req(buffer, bytes_received);
                 auto resp = message_callback(req);
 
-                if (resp != ""){
-
-                }
+                if (resp != "")continue;
             }        
         }
     }
@@ -114,20 +115,17 @@ public:
 
 private:
  
-    void accept_new_connection(fd_set *master, int *fdmax){
+    int accept_new_connection(fd_set *master){
         sockaddr_in cl_addr;
         auto addrlen = sizeof(cl_addr);
         
-        auto newfd = accept(
-            this->sd, 
+        auto newsd = accept(
+            this->listener, 
             (sockaddr *)&cl_addr, 
             (socklen_t *) &addrlen
         );
 
-        FD_SET(this->sd, master); 
-        
-        if(sd > *fdmax){ 
-            *fdmax = sd; 
-        }
+        FD_SET(this->listener, master); 
+        return newsd;
     }
 };
