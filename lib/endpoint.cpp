@@ -66,18 +66,20 @@ public:
         sockaddr_in client_address{};
         socklen_t client_address_length = sizeof(client_address);
         
-        int client_socket_fd = accept(
-            socket_fd, 
-            (sockaddr*) &client_address, 
-            &client_address_length
-        );
-        if (client_socket_fd == -1) {
-            std::cerr << "Failed to accept incoming connection" << std::endl;
-            exit(EXIT_FAILURE);
-        }
+        while (true) {
+            int client_socket_fd = accept(
+                socket_fd, 
+                (sockaddr*) &client_address, 
+                &client_address_length
+            );
+            if (client_socket_fd == -1) {
+                std::cerr << "Failed to accept incoming connection" << std::endl;
+                exit(EXIT_FAILURE);
+            }
 
-        std::thread receive_thread(&Endpoint::Receive, this, client_socket_fd);
-        receive_thread.detach();
+            std::thread receive_thread(&Endpoint::Receive, this, client_socket_fd);
+            receive_thread.detach();
+        }
     }
 
     void Input(std::function<void(std::string)> callback) {

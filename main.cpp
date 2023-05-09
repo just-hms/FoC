@@ -13,8 +13,9 @@ void message_callback(std::string message){
 }
 
 int main() {
-    auto server = new Endpoint("1050");
-    auto client = new Endpoint("4040");
+    auto server = new Endpoint("5050");
+    auto client1 = new Endpoint("4040");
+    auto client2 = new Endpoint("4041");
 
     server->Message(message_callback); 
 
@@ -24,8 +25,11 @@ int main() {
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-    client->Connect("127.0.0.1", "1050");
-    client->Send("ping");
+    client1->Connect("127.0.0.1", "5050");
+    client1->Send("ping1");
+    
+    client2->Connect("127.0.0.1", "5050");
+    client2->Send("ping2");
 
     server_thread.join();
     return 0;
