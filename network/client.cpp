@@ -9,78 +9,52 @@
 #include <thread>
 #include <functional>
 
+#include "network.h"
 
-class Client {
-private:
-    int socket_fd;
+using namespace std;
+
+Client::Client(string server_ip, int port) {
+    sd = socket(
+        AF_INET, 
+        SOCK_STREAM ,
+        0
+    );
     
-    std::string server_ip;
-    int server_port;
-
-    char buffer[1024];
-
-public:
-    Client(std::string server_ip, int port) {
-        socket_fd = socket(
-            AF_INET, 
-            SOCK_STREAM | SOCK_NONBLOCK ,
-            0
-        );
-        if (socket_fd == -1) {
-            std::cerr << "Failed to create socket " << std::endl;
-            exit(EXIT_FAILURE);
-        }
-        this->server_ip = server_ip;
-        this->server_port = port;
+    if (sd == -1) {
+        cerr << "Failed to create socket " << endl;
+        exit(EXIT_FAILURE);
     }
     
-    void Connect() {
-        sockaddr_in server_address{};
-        server_address.sin_family = AF_INET;
-        server_address.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
-        server_address.sin_port = htons(this->server_port);
+    this->server_ip = server_ip;
+    this->server_port = port;
+}
 
-        auto res =   connect(
-            socket_fd, 
-            (struct sockaddr*) &server_address, 
-            sizeof(server_address)
-        );
+error Client::Connect() {
+    sockaddr_in server_address{};
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
+    server_address.sin_port = htons(this->server_port);
 
-        if (res == -1) {
-            std::cerr << "Failed connect" << std::endl;
-            exit(EXIT_FAILURE);
-        }
+    auto res = connect(
+        sd, 
+        (struct sockaddr*) &server_address, 
+        sizeof(server_address)
+    );
+
+    if (res == -1) {
+        return ERR_BROKEN;
     }
+    return NIL;
+}
 
-    std::string Request(std::string message, uint timout_seconds = 0) {
-        auto res = send(
-            socket_fd, 
-            message.c_str(), 
-            message.length(), 
-            0
-        );
-
-        if (res == -1) {
-            std::cerr << "Failed to send message " << std::endl;
-            exit(EXIT_FAILURE);
-        }
-
-        if (timout_seconds == 0){
-            return "";
-        }
-
-        // TODO:
-        //  - add timeout here
-
-        int bytes_received = recv(socket_fd, buffer, sizeof(buffer), 0);
+Response Client::Request(string message, uint timeout_seconds) {
         
-        if (bytes_received == -1) {
-            std::cerr << "Failed to receive response " << std::endl;
-            exit(EXIT_FAILURE);
-        }
+    auto res = Send(this->sd, message);
 
-        std::string resp(buffer, bytes_received);
-        return resp;
+    if (res == -1) {
+        cerr << "Failed to send message " << endl;
+        exit(EXIT_FAILURE);
     }
 
-};
+    return Receive(this->sd);
+}

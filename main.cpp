@@ -4,12 +4,14 @@
 #include <chrono>
 #include <thread>
 
-#include "network/server.cpp"
-#include "network/client.cpp"
+#include "network/network.h"
+
+using namespace std;
 
 int server_port = 101012;
 
 std::string messageHandler(std::string message){
+    cout << "kek";
     if (message != "ping"){
         return "";
     }
@@ -35,7 +37,7 @@ int main() {
     
     auto res = client->Request("ping");
 
-    std::cout << res << std::endl;
+    std::cout << res.content << std::endl;
     
     server_thread.join();
     return 0;
