@@ -97,7 +97,7 @@ public:
         );
 
         if (res == -1) {
-            std::cerr << "Failed to send message " << errno << " " << strerror(errno) << std::endl;
+            std::cerr << "Failed to send message " << std::endl;
             exit(EXIT_FAILURE);
         }
     }
