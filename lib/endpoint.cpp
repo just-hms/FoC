@@ -105,9 +105,9 @@ public:
     }
     void StartInputLoop() {
         std::string line;
-        while (std::getline(std::cin, line)) {
+        while (true) {
+            std::getline(std::cin, line);
             input_callback(line);
-            Send(line);
         }
     }
 
