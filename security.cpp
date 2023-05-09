@@ -39,6 +39,7 @@ class AsymCrypt {
         AsymCrypt(string, string);
         ciphertext encrypt(unsigned char*, uint8_t);
         string decrypt(ciphertext);
+        ~AsymCrypt();
 };
 
 //loads users's public key into a hash map and assigns to each user a progressive ID
@@ -149,6 +150,12 @@ string AsymCrypt::decrypt(ciphertext ct) {
     return string((char*) pt);
 }
 
+AsymCrypt::~AsymCrypt() {
+    for(auto it = this->public_keys.begin(); it != this->public_keys.end(); it++)
+        EVP_PKEY_free(it->second);
+    this->public_keys.clear();
+}
+
 //generates a pair of public and private RSA keys, stores them in .pem files while encrypting the private key
 void generateRSAkeys(string user, string pwd, unsigned int bits) {
     FILE *fp;
@@ -175,10 +182,16 @@ class SymCrypt {
     unordered_map<uint8_t, sessionKey> session_keys;
 
     public:
+        SymCrypt(uint8_t);
         void refresh(uint8_t);
         unsigned char* encrypt(uint8_t, unsigned char*);
         unsigned char* decrypt(uint8_t, unsigned char*);
+        ~SymCrypt();
 };
+
+SymCrypt::SymCrypt(uint8_t userID) {
+    this->refresh(userID);
+}
 
 //creates (or updates if already exists) a new key and iv to communicate with userID
 void SymCrypt::refresh(uint8_t userID) {
@@ -201,7 +214,7 @@ unsigned char* SymCrypt::encrypt(uint8_t userID, unsigned char *pt) {
     }
 
     if(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, k.key, k.iv) <= 0) {
-        cerr<<"Unable to create a initialize context for AES"<<endl;
+        cerr<<"Unable to initialize a context for AES"<<endl;
         EVP_CIPHER_CTX_free(ctx);
         return NULL;
     }
@@ -237,7 +250,7 @@ unsigned char* SymCrypt::decrypt(uint8_t userID, unsigned char *ct) {
     }
 
     if(EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, k.key, k.iv) <= 0) {
-        cerr<<"Unable to create a initialize context for AES"<<endl;
+        cerr<<"Unable to initialize a context for AES"<<endl;
         EVP_CIPHER_CTX_free(ctx);
         return NULL;
     }
@@ -259,15 +272,24 @@ unsigned char* SymCrypt::decrypt(uint8_t userID, unsigned char *ct) {
     return pt;
 }
 
-int main() {
-    //generateRSAkeys("server", "culo", 4096);
-    //AsymCrypt a("server", "culo");
-    //ciphertext c = a.encrypt((unsigned char*)"diobastardo\n", 0);
-    //if(c.len != 0) {string s = a.decrypt(c); cout<<s<<endl;}
-
-    SymCrypt b;
-    b.refresh(0);
-    unsigned char *enc = b.encrypt(0, (unsigned char*)"mannaggia al cristo e tutti gli angeli in colonna\n");
-    cout<<string((char*)b.decrypt(0, enc))<<endl;
-    return 0;
+SymCrypt::~SymCrypt() {
+    for(auto it = this->session_keys.begin(); it != this->session_keys.end(); it++)
+        EVP_PKEY_free(it->second);
+    this->session_keys.clear();
 }
+
+/*EXAMPLE
+//RSA
+generateRSAkeys("user1", "pwd1", 4096);
+AsymCrypt a("user1", "pwd1");
+ciphertext c = a.encrypt((unsigned char*)"Lorem ipsum dolor sit amet\n", 0);
+if(c.len != 0) {
+    string s = a.decrypt(c);
+    cout<<s<<endl;
+}
+
+//AES
+SymCrypt b(0);
+unsigned char *enc = b.encrypt(0, (unsigned char*)"Lorem ipsum dolor sit amet\n");
+cout<<string((char*)b.decrypt(0, enc))<<endl;
+*/
