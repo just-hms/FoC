@@ -23,7 +23,7 @@ public:
     Client(std::string server_ip, int port) {
         socket_fd = socket(
             AF_INET, 
-            SOCK_STREAM ,
+            SOCK_STREAM | SOCK_NONBLOCK ,
             0
         );
         if (socket_fd == -1) {
@@ -34,34 +34,6 @@ public:
         this->server_port = port;
     }
     
-    void Send(std::string message){
-        auto res = send(
-            socket_fd, 
-            message.c_str(), 
-            message.length(), 
-            0
-        );
-
-        if (res == -1) {
-            std::cerr << "Failed to send message " << std::endl;
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    std::string Request(std::string message) {
-        this->Send(message);
-        
-        int bytes_received = recv(socket_fd, buffer, sizeof(buffer), 0);
-        
-        if (bytes_received == -1) {
-            std::cerr << "Failed to receive response " << std::endl;
-            exit(EXIT_FAILURE);
-        }
-
-        std::string resp(buffer, bytes_received);
-        return resp;
-    }
-
     void Connect() {
         sockaddr_in server_address{};
         server_address.sin_family = AF_INET;
@@ -79,4 +51,36 @@ public:
             exit(EXIT_FAILURE);
         }
     }
+
+    std::string Request(std::string message, uint timout_seconds = 0) {
+        auto res = send(
+            socket_fd, 
+            message.c_str(), 
+            message.length(), 
+            0
+        );
+
+        if (res == -1) {
+            std::cerr << "Failed to send message " << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        if (timout_seconds == 0){
+            return "";
+        }
+
+        // TODO:
+        //  - add timeout here
+
+        int bytes_received = recv(socket_fd, buffer, sizeof(buffer), 0);
+        
+        if (bytes_received == -1) {
+            std::cerr << "Failed to receive response " << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        std::string resp(buffer, bytes_received);
+        return resp;
+    }
+
 };

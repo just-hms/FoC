@@ -9,32 +9,42 @@
 #include <functional>
 
   
+#define BUF_LEN 1024
+
 typedef std::function<std::string(std::string)> message_handler;
 
 class Server {
 private:
-    int my_socket;
+    int sd;
     int port;
     message_handler message_callback;
+    char buffer[BUF_LEN];
 
 public:
+    
     Server(int port) {
-        my_socket = socket(
+        // create a non blocking socket
+        this->sd = socket(
             AF_INET, 
-            SOCK_STREAM ,
+            SOCK_STREAM | SOCK_NONBLOCK,
             0
         );
-        if (my_socket == -1) {
+        if (this->sd == -1) {
             std::cerr << "Failed to create socket " << std::endl;
             exit(EXIT_FAILURE);
         }
 
+        // bind the specified port to the socket
         sockaddr_in address{};
         address.sin_family = AF_INET;
         address.sin_addr.s_addr = INADDR_ANY;
         address.sin_port = htons(port);
 
-        auto res = bind(my_socket, (sockaddr*) &address, sizeof(address));
+        auto res = bind(
+            this->sd, 
+            (sockaddr*) &address, 
+            sizeof(address)
+        );
         if (res == -1) {
             std::cerr << "Failed to bind to port " << port << std::endl;
             exit(EXIT_FAILURE);
@@ -42,29 +52,59 @@ public:
     }
 
     void Listen() {
+        fd_set master, read_fds;
+         
+        listen(this->sd, 10);
 
-        int res = listen(my_socket, 1);
-        if (res == -1) {
-            std::cerr << "Failed to listen for incoming connections" << std::endl;
-            exit(EXIT_FAILURE);
-        }
+        FD_ZERO(&master);
+        FD_ZERO(&read_fds);
 
-        sockaddr_in client_address{};
-        socklen_t client_address_length = sizeof(client_address);
+        FD_SET(this->sd, &master);
+
+        auto fdmax = sd;          
+
+        while(true){
+            read_fds = master;     
         
-        while (true) {
-            int client_socket_fd = accept(
-                my_socket, 
-                (sockaddr*) &client_address, 
-                &client_address_length
+            select(
+                fdmax + 1,
+                &read_fds, 
+                NULL, 
+                NULL, 
+                NULL
             );
-            if (client_socket_fd == -1) {
-                std::cerr << "Failed to accept incoming connection" << std::endl;
-                exit(EXIT_FAILURE);
-            }
 
-            std::thread receive_thread(&Server::handler, this, client_socket_fd);
-            receive_thread.detach();
+            for(int i = 0; i <= fdmax; i++) {  
+                if(i == this->sd) {
+                    this->accept_new_connection(
+                        &master, 
+                        &fdmax
+                    );
+                    continue;
+                }
+                
+                int bytes_received = recv(
+                    i, 
+                    this->buffer, 
+                    sizeof(this->buffer), 
+                    0
+                );
+
+                // TODO
+                // - add 0 check and close socket
+
+                if (bytes_received == -1) {
+                    std::cerr << "Failed to receive response " << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                std::string req(buffer, bytes_received);
+                auto resp = message_callback(req);
+
+                if (resp != ""){
+
+                }
+            }        
         }
     }
 
@@ -73,46 +113,21 @@ public:
     }
 
 private:
-    void handler(int socket) {
-        char buffer[1024];
-        int bytes_received;
+ 
+    void accept_new_connection(fd_set *master, int *fdmax){
+        sockaddr_in cl_addr;
+        auto addrlen = sizeof(cl_addr);
+        
+        auto newfd = accept(
+            this->sd, 
+            (sockaddr *)&cl_addr, 
+            (socklen_t *) &addrlen
+        );
 
-        while (true) {
-            bytes_received = recv(
-                socket, 
-                buffer, 
-                sizeof(buffer), 
-                0
-            );
-            if (bytes_received == -1) {
-                std::cerr << "Failed to receive message" << std::endl;
-                exit(EXIT_FAILURE);
-            }
-
-            // closed connection
-            if (bytes_received == 0) {
-                break;
-            }
-
-            std::string message(buffer, bytes_received);
-            auto resp = message_callback(message);
-
-            if (resp == "") continue;
-
-            // if there is a response return it to the client
-            auto res = send(
-                socket, 
-                resp.c_str(), 
-                resp.length(), 
-                0
-            );
-
-            if (res == -1) {
-                std::cerr << "Failed to send response " << std::endl;
-                exit(EXIT_FAILURE);
-            }
+        FD_SET(this->sd, master); 
+        
+        if(sd > *fdmax){ 
+            *fdmax = sd; 
         }
-
-        close(socket);
     }
 };
