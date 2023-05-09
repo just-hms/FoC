@@ -115,18 +115,4 @@ private:
 
         close(socket);
     }
-
-    void Send(int socket_fd , std::string message){
-        auto res = send(
-            socket_fd, 
-            message.c_str(), 
-            message.length(), 
-            0
-        );
-
-        if (res == -1) {
-            std::cerr << "Failed to send message " << std::endl;
-            exit(EXIT_FAILURE);
-        }
-    }
 };
