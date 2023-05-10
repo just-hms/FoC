@@ -1,4 +1,4 @@
-#include "symcrypt.h"
+#include "security.h"
 
 SymCrypt::SymCrypt(uint8_t userID) {
     this->refresh(userID);
