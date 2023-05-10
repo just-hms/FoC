@@ -4,9 +4,7 @@
 #include <filesystem>
 #include <functional>
 #include <unordered_map>
-#include <openssl/ssl.h>
 #include <openssl/evp.h>
-#include <openssl/rsa.h>
 #include <openssl/rand.h>
 #include <openssl/pem.h>
 
