@@ -1,13 +1,4 @@
-#include <iostream>
-#include <string>
-#include <openssl/evp.h>
-#include <openssl/rsa.h>
-#include <openssl/pem.h>
-
-using namespace std;
-
-#define PUBK "pubk.pem"
-#define PRIVK "privk.pem"
+#include "rsagen.h"
 
 //generates a pair of public and private RSA keys, stores them in .pem while encrypting the private key using pwd
 //path specifies both the folder and the user -> "./folder/username"

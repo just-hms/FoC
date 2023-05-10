@@ -21,13 +21,13 @@ int pem_password_callback(char *buf, int max_len, int flag, void *udata) {
 
 EVP_PKEY* private_key_cb() {
 
-    FILE *fp = fopen(<path della chiave privata>, "r");
+    FILE *fp = fopen(<path chiave privata>, "r");
     if(fp == NULL) {
         cerr<<"Couldn't open private key file"<<endl;
         return NULL;
     }
 
-    EVP_PKEY *key = PEM_read_PrivateKey(fp, NULL, pem_password_callback, <pwd usata per cifrare la chiave privata>);
+    EVP_PKEY *key = PEM_read_PrivateKey(fp, NULL, pem_password_callback, <pwd per criptare chiave privata>);
     fclose(fp);
     
     return key;

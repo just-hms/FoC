@@ -1,8 +1,4 @@
-#include <iostream>
-#include <string>
-#include <openssl/evp.h>
-
-using namespace std;
+#include "password.h"
 
 //takes in input a password and a salt, produces the hash using SHA3-512
 string HashAndSalt(string pwd, string salt) {
