@@ -3,8 +3,7 @@
 
 Response Receive(int sd){
     size_t len = 0;
-
-    auto res = recv(sd, (void*)&len, sizeof(size_t), 0);
+    auto res = recv(sd, (void*) &len, sizeof(size_t), 0);
 
     if(res == 0){ 
         return Response{
@@ -19,9 +18,8 @@ Response Receive(int sd){
 
     // Allocate a receive buffer
     std::vector<uint8_t> rcvBuf;    
-    rcvBuf.resize(len,0x00);
-
-    res = recv(sd,&(rcvBuf[0]),len,0);
+    rcvBuf.resize(len, 0x00);
+    res = recv(sd, &(rcvBuf[0]), len, 0);
 
     if(res == 0){ 
         return Response{
@@ -36,7 +34,7 @@ Response Receive(int sd){
 
     std::string message;
 
-    message.assign((rcvBuf[0]),rcvBuf.size());
+    message.assign((rcvBuf[0]), rcvBuf.size());
     
     return Response{
         .err = NIL,
@@ -44,11 +42,11 @@ Response Receive(int sd){
     };
 }
 
-error Send(int sd, std::string message){
+error Send(int sd, std::string message) {
 
     size_t len = htonl(message.size());
 
-    auto res = send(sd,&len ,sizeof(size_t) ,0);
+    auto res = send(sd, &len, sizeof(size_t), 0);
     if(res == 0){    
         return ERR_DISCONNECTED;
     }
@@ -56,7 +54,7 @@ error Send(int sd, std::string message){
         return ERR_BROKEN;
     }
     
-    res = send(sd,message.c_str(),message.size(), 0);
+    res = send(sd, message.c_str(), message.size(), 0);
     if(res == 0){    
         return ERR_DISCONNECTED;
     }

@@ -43,6 +43,9 @@ Server::Server(int port){
 
 void Server::Listen(){
     fd_set master, read_fds;
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
          
     listen(this->listener, 10);
 
@@ -61,7 +64,7 @@ void Server::Listen(){
             &read_fds, 
             NULL, 
             NULL, 
-            NULL
+            &timeout
         );
 
         for(int fd = 0; fd <= fdmax; fd++) {  
@@ -76,7 +79,7 @@ void Server::Listen(){
                 }
                 continue;
             }
-
+            
             auto res = Receive(fd);
 
             if (res.err == ERR_DISCONNECTED || res.err == ERR_BROKEN) {
@@ -87,7 +90,7 @@ void Server::Listen(){
 
             auto resp = callback(res.content);
 
-            if (resp != "")continue;
+            if (resp != "") continue;
 
             auto err = Send(fd,resp);
 
@@ -114,6 +117,6 @@ int Server::acceptNewConnection(fd_set *master){
         (socklen_t *) &addrlen
     );
 
-    FD_SET(this->listener, master); 
+    FD_SET(newsd, master); 
     return newsd;
 }

@@ -48,7 +48,7 @@ error Client::Connect() {
 }
 
 Response Client::Request(string message, uint timeout_seconds) {
-        
+    
     auto res = Send(this->sd, message);
 
     if (res == -1) {
