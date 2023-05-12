@@ -1,18 +1,15 @@
 #include <cerrno>
 #include <iostream>
 #include <string>
-#include <cstring>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <thread>
 
 using namespace std;
 
 #include "network.h"
 
 Server::Server(int port){
-
+    this->port = port;
     // create a non blocking socket
     this->listener = socket(
         AF_INET, 
@@ -42,10 +39,13 @@ Server::Server(int port){
 }
 
 void Server::Listen(){
+    cout << "server starting at port :" << this->port << endl;
     fd_set master, read_fds;
-    struct timeval timeout;
-    timeout.tv_sec = 1;
-    timeout.tv_usec = 0;
+    
+    timeval timeout{
+        .tv_sec = 1,
+        .tv_usec = 0
+    };
          
     listen(this->listener, 10);
 

@@ -1,5 +1,7 @@
 #include "network.h"
 #include <vector>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 
 Response Receive(int sd){
     size_t len = 0;

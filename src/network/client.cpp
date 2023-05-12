@@ -1,13 +1,8 @@
 #include <cerrno>
-#include <cstdlib>
 #include <iostream>
 #include <string>
-#include <cstring>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <thread>
-#include <functional>
 
 #include "network.h"
 

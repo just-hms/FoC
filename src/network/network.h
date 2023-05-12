@@ -1,10 +1,5 @@
-#include <sys/socket.h>
 #include <string>
 #include <functional>
-#include <iostream>
-#include <netinet/in.h>
-
-
 
 #define BUF_LEN 1024
 
