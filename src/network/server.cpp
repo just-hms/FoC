@@ -6,12 +6,10 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-using namespace std;
-
 #include "network.h"
 
-Server::Server(int port){
-    this->port = port;
+Server::Server(ServerOption *opt) noexcept{
+    this->port = opt->port;
     // create a non blocking socket
     this->listener = socket(
         AF_INET, 
@@ -19,7 +17,7 @@ Server::Server(int port){
         0
     );
     if (this->listener == -1) {
-        cerr << "Failed to create socket " << endl;
+        std::cerr << "Failed to create socket " << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -35,14 +33,14 @@ Server::Server(int port){
         sizeof(address)
     );
     if (res == -1) {
-        cerr << "Failed to bind to port " << port << endl;
+        std::cerr << "Failed to bind to port " << port << std::endl;
         exit(EXIT_FAILURE);
     }
 }
 
 void Server::Listen(){
     
-    cout << "server starting at port :" << this->port << endl;
+    std::cout << "server starting at port :" << this->port << std::endl;
     fd_set master, read_fds;
     
     timeval timeout{
@@ -91,7 +89,7 @@ void Server::Listen(){
                 continue;
             }
             if (this->callback == nullptr){
-                cout << "Warning no message handler specified" << endl;               
+                std::cout << "Warning no message handler specified" << std::endl;               
                 continue;
             }
             auto resp = callback(res.content);

@@ -54,7 +54,7 @@ Response Receive(int sd) noexcept {
     delete []  data;
 
     return Response{
-        .err = NIL,
+        .err = ERR_OK,
         .content = message
     };
 }
@@ -64,7 +64,7 @@ error Send(int sd, std::string message) noexcept {
     int len = message.length();
 
     if (len < 0 || len > MAX_MESSAGE_SIZE){
-        return ERR_BROKEN;
+        return MESSAGE_TOO_LONG;
     }
 
     size_t web_len = htonl(message.size());
@@ -84,5 +84,5 @@ error Send(int sd, std::string message) noexcept {
     if(res == -1){    
         return ERR_BROKEN;
     }
-    return NIL;
+    return ERR_OK;
 }

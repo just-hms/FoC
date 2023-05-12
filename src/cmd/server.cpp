@@ -4,10 +4,8 @@
 #include "./../config/config.h"
 #include "./../network/network.h"
 
-using namespace std;
-
 std::string messageHandler(std::string message){
-    cout << "message received: " << message  << endl;
+    std::cout << "message received: " << message  << std::endl;
     if (message != "ping"){
         return "";
     }
@@ -15,9 +13,14 @@ std::string messageHandler(std::string message){
 }
 
 int main() {
-    auto config = new Config();
-    auto server = new Server(config->ServerPort);
-    server->SetHandler(messageHandler); 
-    server->Listen();
+    Config cfg{};
+
+    ServerOption opt{
+        .port = cfg.ServerPort,
+    };
+
+    Server server(&opt);
+    server.SetHandler(messageHandler); 
+    server.Listen();
     return 0;
 }

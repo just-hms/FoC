@@ -6,9 +6,7 @@
 
 #include "network.h"
 
-using namespace std;
-
-Client::Client(string server_ip, int port) {
+Client::Client(ClientOption* opt) {
     sd = socket(
         AF_INET, 
         SOCK_STREAM ,
@@ -16,12 +14,12 @@ Client::Client(string server_ip, int port) {
     );
     
     if (sd == -1) {
-        cerr << "Failed to create socket " << endl;
+        std::cerr << "Failed to create socket " << std::endl;
         exit(EXIT_FAILURE);
     }
     
-    this->server_ip = server_ip;
-    this->server_port = port;
+    this->server_ip = opt->server_ip;
+    this->server_port = opt->port;
 }
 
 error Client::Connect() {
@@ -39,15 +37,15 @@ error Client::Connect() {
     if (res == -1) {
         return ERR_BROKEN;
     }
-    return NIL;
+    return ERR_OK;
 }
 
-Response Client::Request(string message, uint timeout_seconds) {
+Response Client::Request(std::string message) {
     
     auto res = Send(this->sd, message);
 
     if (res == -1) {
-        cerr << "Failed to send message " << endl;
+        std::cerr << "Failed to send message " << std::endl;
         exit(EXIT_FAILURE);
     }
 

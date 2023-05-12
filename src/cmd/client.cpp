@@ -5,14 +5,18 @@
 using namespace std;
 
 int main() {
-    auto config = new Config();
-    auto client = new Client(
-        "127.0.0.1", 
-        config->ServerPort
-    );
-    client->Connect();
-    auto res = client->Request("ping");
+    Config cfg{};
+    
+    ClientOption opt{
+        .server_ip = "127.0.0.1",
+        .port = cfg.ServerPort,
+    };
 
-    std::cout << res.content << std::endl;
+    Client client(&opt);
+    client.Connect();
+    auto res = client.Request("ping");
+    
+    std::cout << "status :" << res.err << std::endl;
+    std::cout << "content :" << res.content << std::endl;
     return 0;
 }
