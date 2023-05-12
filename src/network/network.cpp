@@ -15,7 +15,7 @@
 
 int StatusCodeFromRes(int code){
     switch (code) {
-        case 0: return ERR_DISCONNECTED;
+        case 0: return ERR_TIMEOUT;
         case -1: return ERR_BROKEN;
         default: return ERR_BROKEN;
     }

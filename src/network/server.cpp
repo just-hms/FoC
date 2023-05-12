@@ -84,13 +84,13 @@ void Server::Listen(){
             
             auto res = Receive(fd);
 
-            if (res.err == ERR_DISCONNECTED || res.err == ERR_BROKEN) {
+            if (res.err == ERR_TIMEOUT || res.err == ERR_BROKEN) {
                 FD_CLR(fd, &master);
                 close(fd);
                 continue;
             }
             if (this->callback == nullptr){
-                std::cout << "Warning no message handler specified" << std::endl;               
+                std::cout << "Warning: no message handler specified" << std::endl;               
                 continue;
             }
             auto resp = callback(res.content);

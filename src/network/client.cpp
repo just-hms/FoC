@@ -12,12 +12,34 @@ Client::Client(ClientOption* opt) {
         SOCK_STREAM ,
         0
     );
-    
+
     if (sd == -1) {
         std::cerr << "Failed to create socket " << std::endl;
         exit(EXIT_FAILURE);
     }
-    
+
+
+    if (opt->timeout > 0) {
+        
+        timeval recive_timeout = {
+            .tv_sec = 0,
+            .tv_usec = opt->timeout * 1000
+        };
+
+        auto res = setsockopt(
+            sd, 
+            SOL_SOCKET, 
+            SO_RCVTIMEO, 
+            &recive_timeout, 
+            sizeof(timeval)
+        );
+
+        if (res == -1){
+            std::cerr << "Failed to create socket " << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+
     this->server_ip = opt->server_ip;
     this->server_port = opt->port;
 }
