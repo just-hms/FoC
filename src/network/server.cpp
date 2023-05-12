@@ -1,4 +1,6 @@
 #include <cerrno>
+#include <cstddef>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <arpa/inet.h>
@@ -39,6 +41,7 @@ Server::Server(int port){
 }
 
 void Server::Listen(){
+    
     cout << "server starting at port :" << this->port << endl;
     fd_set master, read_fds;
     
@@ -87,7 +90,10 @@ void Server::Listen(){
                 close(fd);
                 continue;
             }
-
+            if (this->callback == nullptr){
+                cout << "Warning no message handler specified" << endl;               
+                continue;
+            }
             auto resp = callback(res.content);
 
             if (resp != "") continue;
@@ -104,7 +110,7 @@ void Server::Listen(){
 }
 
 void Server::SetHandler(handler callback) {
-    callback = callback;
+    this->callback = callback;
 }
 
 int Server::acceptNewConnection(fd_set *master){
