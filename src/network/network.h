@@ -4,7 +4,7 @@
 #define BUF_LEN 1024
 
 // general structures
-typedef int error;
+typedef int Error;
 
 #define ERR_OK              +0
 #define ERR_NOT_FOUND       -1
@@ -16,12 +16,12 @@ typedef int error;
 typedef std::function<std::string(std::string)> handler;
 
 struct Response{
-    error err;
+    Error err;
     std::string content;
 };
 
 Response Receive(int sd) noexcept;
-error Send(int sd, std::string message) noexcept;
+Error Send(int sd, std::string message) noexcept;
 
 // Client class
 struct ClientOption {
@@ -38,7 +38,7 @@ private:
     int server_port;
 public:
     Client(ClientOption *opt);
-    error Connect();
+    Error Connect();
     Response Request(std::string message);
 };
 

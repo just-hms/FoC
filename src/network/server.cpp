@@ -10,6 +10,7 @@
 
 Server::Server(ServerOption *opt) noexcept{
     this->port = opt->port;
+    
     // create a non blocking socket
     this->listener = socket(
         AF_INET, 

@@ -1,5 +1,7 @@
 #include "network.h"
 #include <cstdint>
+#include <iterator>
+#include <netinet/in.h>
 #include <vector>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -11,20 +13,30 @@
 
 #define MAX_MESSAGE_SIZE 1024
 
-Response Receive(int sd) noexcept {
-    size_t len = 0;
-    auto res = recv(sd, (void*) &len, sizeof(size_t), 0);
+int StatusCodeFromRes(int code){
+    switch (code) {
+        case 0: return ERR_DISCONNECTED;
+        case -1: return ERR_BROKEN;
+        default: return ERR_BROKEN;
+    }
+}
 
-    if(res == 0){ 
+Response Receive(int sd) noexcept {
+    size_t web_len = 0;
+
+	std::cout << "expected1: " << sizeof(size_t) << std::endl;
+
+    auto res = recv(sd, (void*) &web_len, sizeof(size_t), 0);
+
+    if (res <= 0){
         return Response{
-            .err = ERR_DISCONNECTED,
-        };   
+            .err = StatusCodeFromRes(res)
+        };
     }
-    if(res == -1){
-        return Response{
-            .err = ERR_BROKEN,
-        };    
-    }
+
+	// TODO:
+	//	- check type
+	int len = ntohl(web_len);
 
     if (len < 0 || len > MAX_MESSAGE_SIZE){
         return Response{
@@ -34,18 +46,18 @@ Response Receive(int sd) noexcept {
 
     // Allocate a receive buffer
     char* data = new char[len]();
-    res = recv(sd, data, len, 0);
-
-    if(res == 0){ 
+    
+    if (data == nullptr){
         return Response{
-            .err = ERR_DISCONNECTED,
+            .err = ERR_BROKEN,
         };
     }
 
-    if(res == -1){
+    res = recv(sd, data, len, 0);
+    if (res <= 0){
         return Response{
-            .err = ERR_BROKEN,
-        };    
+            .err = StatusCodeFromRes(res)
+        };
     }
 
     std::string message;
@@ -59,9 +71,11 @@ Response Receive(int sd) noexcept {
     };
 }
 
-error Send(int sd, std::string message) noexcept {
+Error Send(int sd, std::string message) noexcept {
 
-    int len = message.length();
+	// TODO:
+	//	- check type
+    int len = message.size();
 
     if (len < 0 || len > MAX_MESSAGE_SIZE){
         return MESSAGE_TOO_LONG;
@@ -70,19 +84,16 @@ error Send(int sd, std::string message) noexcept {
     size_t web_len = htonl(message.size());
 
     auto res = send(sd, &web_len, sizeof(size_t), 0);
-    if(res == 0){    
-        return ERR_DISCONNECTED;
-    }
-    if(res == -1){    
-        return ERR_BROKEN;
+
+    if(res <= 0){
+        return StatusCodeFromRes(res);
     }
     
     res = send(sd, message.c_str(), len, 0);
-    if(res == 0){    
-        return ERR_DISCONNECTED;
+    
+	if(res <= 0){
+        return StatusCodeFromRes(res);
     }
-    if(res == -1){    
-        return ERR_BROKEN;
-    }
+
     return ERR_OK;
 }

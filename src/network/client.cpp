@@ -22,7 +22,7 @@ Client::Client(ClientOption* opt) {
     this->server_port = opt->port;
 }
 
-error Client::Connect() {
+Error Client::Connect() {
     sockaddr_in server_address{};
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
@@ -41,12 +41,13 @@ error Client::Connect() {
 }
 
 Response Client::Request(std::string message) {
-    
+        
     auto res = Send(this->sd, message);
 
-    if (res == -1) {
-        std::cerr << "Failed to send message " << std::endl;
-        exit(EXIT_FAILURE);
+    if (res != ERR_OK) {
+        return Response{
+            .err = res
+        };
     }
 
     return Receive(this->sd);
