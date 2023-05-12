@@ -1,7 +1,10 @@
 #include "network.h"
+#include <cstdint>
 #include <vector>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+
+#include <iostream>
 
 Response Receive(int sd){
     size_t len = 0;
@@ -19,9 +22,8 @@ Response Receive(int sd){
     }
 
     // Allocate a receive buffer
-    std::vector<uint8_t> rcvBuf;    
-    rcvBuf.resize(len, 0x00);
-    res = recv(sd, &(rcvBuf[0]), len, 0);
+    char* data = new char[len]();
+    res = recv(sd, data, len, 0);
 
     if(res == 0){ 
         return Response{
@@ -36,8 +38,9 @@ Response Receive(int sd){
 
     std::string message;
 
-    message.assign((rcvBuf[0]), rcvBuf.size());
-    
+    message.assign(data, len);
+    delete []  data;
+
     return Response{
         .err = NIL,
         .content = message

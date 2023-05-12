@@ -4,6 +4,7 @@ Foundation of Cybersecuity project
 
 ## requirements
 
-```
-sudo apt-get install libjsoncpp-dev
+```shell
+sudo apt install libssl-dev
+sudo apt install libjsoncpp-dev
 ```

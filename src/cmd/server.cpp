@@ -7,7 +7,7 @@
 using namespace std;
 
 std::string messageHandler(std::string message){
-    cout << "kek";
+    cout << "message received: " << message  << endl;
     if (message != "ping"){
         return "";
     }
