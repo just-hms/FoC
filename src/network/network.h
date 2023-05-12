@@ -8,9 +8,8 @@ typedef int Error;
 
 #define ERR_OK              +0
 #define ERR_NOT_FOUND       -1
-#define ERR_TIMEOUT    -2
+#define ERR_TIMEOUT         -2
 #define ERR_BROKEN          -3
-#define ERR_TIMEOUT         -4
 #define MESSAGE_TOO_LONG    -5
 
 typedef std::function<std::string(std::string)> handler;

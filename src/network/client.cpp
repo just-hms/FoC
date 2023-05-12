@@ -7,13 +7,13 @@
 #include "network.h"
 
 Client::Client(ClientOption* opt) {
-    sd = socket(
+    this->sd = socket(
         AF_INET, 
         SOCK_STREAM ,
         0
     );
 
-    if (sd == -1) {
+    if (this->sd == -1) {
         std::cerr << "Failed to create socket " << std::endl;
         exit(EXIT_FAILURE);
     }
@@ -27,7 +27,7 @@ Client::Client(ClientOption* opt) {
         };
 
         auto res = setsockopt(
-            sd, 
+            this->sd, 
             SOL_SOCKET, 
             SO_RCVTIMEO, 
             &recive_timeout, 
@@ -51,7 +51,7 @@ Error Client::Connect() {
     server_address.sin_port = htons(this->server_port);
 
     auto res = connect(
-        sd, 
+        this->sd, 
         (struct sockaddr*) &server_address, 
         sizeof(server_address)
     );
@@ -63,14 +63,13 @@ Error Client::Connect() {
 }
 
 Response Client::Request(std::string message) {
-        
-    auto res = Send(this->sd, message);
+    auto err = Send(this->sd, message);
 
-    if (res != ERR_OK) {
+    if (err != ERR_OK) {
         return Response{
-            .err = res
+            .err = err
         };
     }
-
+    
     return Receive(this->sd);
 }
