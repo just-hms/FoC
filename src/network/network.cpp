@@ -6,7 +6,12 @@
 
 #include <iostream>
 
-Response Receive(int sd){
+// TODO:
+//  - get MAX_MESSAGE_SIZE from config
+
+#define MAX_MESSAGE_SIZE 1024
+
+Response Receive(int sd) noexcept {
     size_t len = 0;
     auto res = recv(sd, (void*) &len, sizeof(size_t), 0);
 
@@ -21,6 +26,12 @@ Response Receive(int sd){
         };    
     }
 
+    if (len < 0 || len > MAX_MESSAGE_SIZE){
+        return Response{
+            .err = ERR_BROKEN,
+        };    
+    }
+
     // Allocate a receive buffer
     char* data = new char[len]();
     res = recv(sd, data, len, 0);
@@ -28,8 +39,9 @@ Response Receive(int sd){
     if(res == 0){ 
         return Response{
             .err = ERR_DISCONNECTED,
-        };   
+        };
     }
+
     if(res == -1){
         return Response{
             .err = ERR_BROKEN,
@@ -47,11 +59,17 @@ Response Receive(int sd){
     };
 }
 
-error Send(int sd, std::string message) {
+error Send(int sd, std::string message) noexcept {
 
-    size_t len = htonl(message.size());
+    int len = message.length();
 
-    auto res = send(sd, &len, sizeof(size_t), 0);
+    if (len < 0 || len > MAX_MESSAGE_SIZE){
+        return ERR_BROKEN;
+    }
+
+    size_t web_len = htonl(message.size());
+
+    auto res = send(sd, &web_len, sizeof(size_t), 0);
     if(res == 0){    
         return ERR_DISCONNECTED;
     }
@@ -59,7 +77,7 @@ error Send(int sd, std::string message) {
         return ERR_BROKEN;
     }
     
-    res = send(sd, message.c_str(), message.size(), 0);
+    res = send(sd, message.c_str(), len, 0);
     if(res == 0){    
         return ERR_DISCONNECTED;
     }

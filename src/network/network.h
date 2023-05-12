@@ -18,8 +18,8 @@ struct Response{
     std::string content;
 };
 
-Response Receive(int sd);
-error Send(int sd, std::string message);
+Response Receive(int sd) noexcept;
+error Send(int sd, std::string message) noexcept;
 
 
 // Client class
