@@ -16,7 +16,7 @@ int main() {
     client.Connect();
     auto res = client.Request("ping");
     
-    std::cout << "status :" << res.err << std::endl;
-    std::cout << "content :" << res.content << std::endl;
+    std::cout << "status: " << res.err << std::endl;
+    std::cout << "content: " << res.content << std::endl;
     return 0;
 }

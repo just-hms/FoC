@@ -95,7 +95,7 @@ void Server::Listen(){
             }
             auto resp = callback(res.content);
 
-            if (resp != "") continue;
+            if (resp == "") continue;
 
             auto err = Send(fd,resp);
 

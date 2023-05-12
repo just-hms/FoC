@@ -24,8 +24,6 @@ int StatusCodeFromRes(int code){
 Response Receive(int sd) noexcept {
     size_t web_len = 0;
 
-	std::cout << "expected1: " << sizeof(size_t) << std::endl;
-
     auto res = recv(sd, (void*) &web_len, sizeof(size_t), 0);
 
     if (res <= 0){
