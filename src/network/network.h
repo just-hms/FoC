@@ -12,7 +12,7 @@ typedef int Error;
 #define ERR_BROKEN          -3
 #define MESSAGE_TOO_LONG    -5
 
-typedef std::function<std::string(std::string)> handler;
+typedef std::function<std::string(int, std::string)> handler;
 
 struct Response{
     Error err;

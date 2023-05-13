@@ -4,7 +4,7 @@
 #include "./../config/config.h"
 #include "./../network/network.h"
 
-std::string messageHandler(std::string message){
+std::string messageHandler(int sd, std::string message){
     std::cout << "message received: " << message  << std::endl;
     if (message != "ping"){
         return "";

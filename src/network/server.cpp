@@ -93,7 +93,7 @@ void Server::Listen(){
                 std::cout << "Warning: no message handler specified" << std::endl;               
                 continue;
             }
-            auto resp = callback(res.content);
+            auto resp = callback(fd, res.content);
 
             if (resp == "") continue;
 
