@@ -22,17 +22,31 @@ namespace protocol {
         virtual entity::Response Receive(int sd) { return RawReceive(sd); }
     };
 
+    struct FunkyOptions {
+        std::string username;
+    };
+
+    struct HandshakeResponse {
+        std::string sessionkey;
+        entity::Error err;
+    };
+
     class FunkyProtocol : public protocol::IProtocol{
     private:
-        bool handshake = false;
+        std::string sessions_key;
+        std::string username;
     public:
         // TODO:
         //  - edit constructor to accept cfg
         ~FunkyProtocol() {}
+        FunkyProtocol(FunkyOptions *opt);
+        
         virtual entity::Error Send(int sd, std::string message);
         virtual entity::Response Receive(int sd);
-        entity::Error SendHandshake(int sd, std::string message);
-        entity::Error ReceiveHandshake(int sd);
+        
+        void SetUsername(std::string username);
+        HandshakeResponse ClientHandshake(int sd);
+        HandshakeResponse ServerHandshake(int sd);
     };
 }
 
