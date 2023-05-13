@@ -6,12 +6,22 @@
 
 #include "network.h"
 
+
+// TODO
+//  - find where to do the handshake
+
 Client::Client(ClientOption* opt) {
     this->sd = socket(
         AF_INET, 
         SOCK_STREAM ,
         0
     );
+
+    // if no protocol is specified used the default
+    if(opt->proto == nullptr){
+        protocol::RawProtocol p;
+        opt->proto = &p;
+    }
 
     if (this->sd == -1) {
         std::cerr << "Failed to create socket " << std::endl;
@@ -44,7 +54,7 @@ Client::Client(ClientOption* opt) {
     this->server_port = opt->port;
 }
 
-Error Client::Connect() {
+entity::Error Client::Connect() {
     sockaddr_in server_address{};
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
@@ -57,19 +67,21 @@ Error Client::Connect() {
     );
 
     if (res == -1) {
-        return ERR_BROKEN;
+        return entity::ERR_BROKEN;
     }
-    return ERR_OK;
+    return entity::ERR_OK;
 }
 
-Response Client::Request(std::string message) {
-    auto err = Send(this->sd, message);
+entity::Response Client::Request(std::string message) {
+    auto err = this->proto->Send(this->sd, message);
 
-    if (err != ERR_OK) {
-        return Response{
+    if (err != entity::ERR_OK) {
+        return entity::Response{
             .err = err
         };
     }
     
-    return Receive(this->sd);
+    return this->proto->Receive(this->sd);
 }
+
+Client::~Client() {;}

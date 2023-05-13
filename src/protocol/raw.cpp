@@ -1,4 +1,3 @@
-#include "network.h"
 #include <cstdint>
 #include <iterator>
 #include <netinet/in.h>
@@ -8,6 +7,10 @@
 
 #include <iostream>
 
+#include "protocol.h"
+
+#define MAX_MESSAGE_SIZE 1024
+
 // TODO:
 //  - get MAX_MESSAGE_SIZE from config
 
@@ -15,19 +18,19 @@
 
 int StatusCodeFromRes(int code){
     switch (code) {
-        case 0: return ERR_TIMEOUT;
-        case -1: return ERR_BROKEN;
-        default: return ERR_BROKEN;
+        case 0:     return entity::ERR_TIMEOUT;
+        case -1:    return entity::ERR_BROKEN;
+        default:    return entity::ERR_BROKEN;
     }
 }
 
-Response Receive(int sd) noexcept {
+entity::Response RawReceive(int sd) noexcept {
     size_t web_len = 0;
 
     auto res = recv(sd, (void*) &web_len, sizeof(size_t), 0);
 
     if (res <= 0){
-        return Response{
+        return entity::Response{
             .err = StatusCodeFromRes(res)
         };
     }
@@ -37,8 +40,8 @@ Response Receive(int sd) noexcept {
 	int len = ntohl(web_len);
 
     if (len < 0 || len > MAX_MESSAGE_SIZE){
-        return Response{
-            .err = ERR_BROKEN,
+        return entity::Response{
+            .err = entity::ERR_BROKEN,
         };    
     }
 
@@ -46,14 +49,14 @@ Response Receive(int sd) noexcept {
     char* data = new char[len]();
     
     if (data == nullptr){
-        return Response{
-            .err = ERR_BROKEN,
+        return entity::Response{
+            .err = entity::ERR_BROKEN,
         };
     }
 
     res = recv(sd, data, len, 0);
     if (res <= 0){
-        return Response{
+        return entity::Response{
             .err = StatusCodeFromRes(res)
         };
     }
@@ -63,20 +66,20 @@ Response Receive(int sd) noexcept {
     message.assign(data, len);
     delete []  data;
 
-    return Response{
-        .err = ERR_OK,
+    return entity::Response{
+        .err = entity::ERR_OK,
         .content = message
     };
 }
 
-Error Send(int sd, std::string message) noexcept {
+entity::Error RawSend(int sd, std::string message) noexcept {
 
 	// TODO:
 	//	- check type
     int len = message.size();
 
     if (len < 0 || len > MAX_MESSAGE_SIZE){
-        return MESSAGE_TOO_LONG;
+        return entity::ERR_MESSAGE_TOO_LONG;
     }
 
     size_t web_len = htonl(message.size());
@@ -93,5 +96,5 @@ Error Send(int sd, std::string message) noexcept {
         return StatusCodeFromRes(res);
     }
 
-    return ERR_OK;
+    return entity::ERR_OK;
 }

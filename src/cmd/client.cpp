@@ -4,11 +4,12 @@
 
 int main() {
     Config cfg{};
-    
+
+
     ClientOption opt{
         .server_ip = "127.0.0.1",
         .port = cfg.ServerPort,
-        .timeout = 200
+        .timeout = 200,
     };
 
     Client client(&opt);
@@ -16,7 +17,7 @@ int main() {
 
 
     // ping pong
-    auto res = client.Request("ping");
+    auto res = client.Request("{\"username\":\"kek\", \"password\":\"kek\"");
     std::cout << "content: " << res.content << std::endl;
    
     // timeout check
