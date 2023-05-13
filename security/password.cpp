@@ -15,14 +15,24 @@ int decode(const string &s) {
     return strtoul(s.c_str(), NULL, 16);
 }
 
+string Hash(string m) {
+    unsigned int buflen;
+    char *buf = new char[hash_len];
+
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    EVP_DigestInit(ctx, EVP_sha3_512());
+    EVP_DigestUpdate(ctx, (unsigned char*)m.c_str(), m.size());
+    EVP_DigestFinal(ctx, (unsigned char*)buf, &buflen);
+    EVP_MD_CTX_free(ctx);
+
+    return encode(buf, hash_len);
+}
+
 //takes in input a password and salt
 //if the salt is empty it generates one
 //pwd and salt are concatenated and used as input to generate the hash
 //returns hex(hash|salt)
 string HashAndSalt(string pwd, string salt) {
-
-    unsigned int buflen;
-    char *buf = new char[hash_len];
 
     if(salt.size() == 0) {
         salt.resize(SALT_LEN);
@@ -30,18 +40,7 @@ string HashAndSalt(string pwd, string salt) {
         salt = encode(&salt[0], SALT_LEN);
     }
 
-    //concatenation
-    string m = pwd + salt;
-
-    //hashing
-    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-    EVP_DigestInit(ctx, EVP_sha3_512());
-    EVP_DigestUpdate(ctx, (unsigned char*)m.c_str(), m.size());
-    EVP_DigestFinal(ctx, (unsigned char*)buf, &buflen);
-    string hash = encode(buf, hash_len);
-    EVP_MD_CTX_free(ctx);
-
-    return hash+"|"+salt;
+    return Hash(pwd + salt)+"|"+salt;
 }
 
 //takes in input hex(hash|salt) and the pwd in the clear

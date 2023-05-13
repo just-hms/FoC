@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
+#include <openssl/dh.h>
 #include <openssl/rand.h>
 #include <openssl/pem.h>
 
@@ -71,5 +72,6 @@ void generateRSAkeys(std::string, std::string, unsigned int);
 
 
 // PASSWORD
+std::string Hash(std::string);
 std::string HashAndSalt(std::string, std::string);
 bool VerifyHash(std::string, std::string);
