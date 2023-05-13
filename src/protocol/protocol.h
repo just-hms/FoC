@@ -17,10 +17,9 @@ namespace protocol {
 
     class RawProtocol : public protocol::IProtocol{
     public:
-        RawProtocol(){};
         ~RawProtocol() {}
-        entity::Error Send(int sd, std::string message) { return RawSend(sd, message); }
-        entity::Response Receive(int sd) { return RawReceive(sd); }
+        virtual entity::Error Send(int sd, std::string message) { return RawSend(sd, message); }
+        virtual entity::Response Receive(int sd) { return RawReceive(sd); }
     };
 
     class FunkyProtocol : public protocol::IProtocol{
@@ -29,12 +28,11 @@ namespace protocol {
     public:
         // TODO:
         //  - edit constructor to accept cfg
-        FunkyProtocol(){};
         ~FunkyProtocol() {}
+        virtual entity::Error Send(int sd, std::string message);
+        virtual entity::Response Receive(int sd);
         entity::Error SendHandshake(int sd, std::string message);
         entity::Error ReceiveHandshake(int sd);
-        entity::Error Send(int sd, std::string message);
-        entity::Response Receive(int sd);
     };
 }
 

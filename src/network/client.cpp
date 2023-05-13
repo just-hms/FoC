@@ -7,27 +7,25 @@
 #include "network.h"
 
 
-// TODO
-//  - find where to do the handshake
-
 Client::Client(ClientOption* opt) {
+    if(opt->proto == nullptr){
+        std::cerr << "You must specify a protocol " << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    this->proto = opt->proto;
+
     this->sd = socket(
         AF_INET, 
         SOCK_STREAM ,
         0
     );
 
-    // if no protocol is specified used the default
-    if(opt->proto == nullptr){
-        protocol::RawProtocol p;
-        opt->proto = &p;
-    }
 
     if (this->sd == -1) {
         std::cerr << "Failed to create socket " << std::endl;
         exit(EXIT_FAILURE);
     }
-
 
     if (opt->timeout > 0) {
         

@@ -9,12 +9,13 @@
 #include "network.h"
 
 Server::Server(ServerOption *opt) noexcept{
-    this->port = opt->port;
-
     if(opt->proto == nullptr){
-        protocol::RawProtocol p;
-        opt->proto = &p;
+        std::cerr << "You must specify a protocol " << std::endl;
+        exit(EXIT_FAILURE);
     }
+
+    this->port = opt->port;
+    this->proto = opt->proto;
 
     // create a non blocking socket
     this->listener = socket(
@@ -131,4 +132,5 @@ int Server::acceptNewConnection(fd_set *master){
     return newsd;
 }
 
-Server::~Server(){;}
+
+Server::~Server() {;}

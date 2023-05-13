@@ -24,7 +24,7 @@ private:
     int sd;
     std::string server_ip;
     int server_port;
-    protocol::IProtocol* proto;
+    protocol::IProtocol* proto = nullptr;
 
 public:
     Client(ClientOption *opt);
@@ -35,7 +35,7 @@ public:
 
 struct ServerOption {
     int port;
-    protocol::IProtocol* proto;
+    protocol::IProtocol* proto = nullptr;
 };
 
 // Server class

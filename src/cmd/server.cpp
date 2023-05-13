@@ -15,8 +15,11 @@ std::string messageHandler(int sd, std::string message){
 int main() {
     Config cfg{};
 
+    protocol::RawProtocol p;
+    
     ServerOption opt{
         .port = cfg.ServerPort,
+        .proto = &p,
     };
 
     Server server(&opt);
