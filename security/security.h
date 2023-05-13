@@ -9,13 +9,10 @@
 #include <openssl/rand.h>
 #include <openssl/pem.h>
 
-using namespace std;
-
 #define SYMMLEN 256
+#define SALT_LEN 16
 #define PUBK "pubk.pem"
 #define PRIVK "privk.pem"
-
-using namespace std;
 
 // ASYMCRYPT
 struct ciphertext {
@@ -34,13 +31,14 @@ if(c.len != 0) {
 }
 */
 class AsymCrypt {
-    function<EVP_PKEY* ()> privk_cb;
-    unordered_map<uint8_t, EVP_PKEY*> public_keys;
+    std::string privk;
+    std::string pubk;
+    std::string privk_pwd;
 
     public:
-        AsymCrypt(function<EVP_PKEY* ()>, unordered_map<uint8_t, EVP_PKEY*>);
-        ciphertext encrypt(unsigned char*, uint8_t);
-        string decrypt(ciphertext);
+        AsymCrypt(std::string, std::string, std::string);
+        ciphertext encrypt(unsigned char*);
+        std::string decrypt(ciphertext);
         ~AsymCrypt();
 };
 
@@ -58,20 +56,20 @@ unsigned char *enc = b.encrypt(0, (unsigned char*) "Lorem ipsum dolor sit amet\n
 cout<<string((char*) b.decrypt(0, enc))<<endl;
 */
 class SymCrypt {
-    unordered_map<uint8_t, sessionKey> session_keys;
+    sessionKey key;
 
     public:
-        SymCrypt(uint8_t);
-        void refresh(uint8_t);
-        unsigned char* encrypt(uint8_t, unsigned char*);
-        unsigned char* decrypt(uint8_t, unsigned char*);
+        SymCrypt(sessionKey);
+        void refresh(sessionKey);
+        unsigned char* encrypt(unsigned char*);
+        unsigned char* decrypt(unsigned char*);
         ~SymCrypt();
 };
 
 // RSAGEN
-void generateRSAkeys(string, string, unsigned int);
+void generateRSAkeys(std::string, std::string, unsigned int);
 
 
 // PASSWORD
-string HashAndSalt(string, string);
-bool VerifyHash(string, string, string);
+std::string HashAndSalt(std::string, std::string);
+bool VerifyHash(std::string, std::string);

@@ -1,22 +1,36 @@
 #include "security.h"
-
 using namespace std;
 
 //loads users's public key contained in path into a hash map and assigns to each user a progressive ID
-AsymCrypt::AsymCrypt(function<EVP_PKEY* ()> callback, unordered_map<uint8_t, EVP_PKEY*> keys) {
-    this->privk_cb = callback;
-    this->public_keys = keys;
+AsymCrypt::AsymCrypt(string privk_file, string pubk_file, string pwd) {
+    this->privk = privk_file;
+    this->pubk = pubk_file;
+    this->privk_pwd = pwd;
+}
+
+//copies udata into buf and returns the amount of bytes copied
+int pem_password_callback(char *buf, int max_len, int flag, void *udata) {
+    char* pwd = (char*) udata;
+    int len = strnlen(pwd, max_len);
+
+    if(len > max_len)
+        return 0;
+
+    memcpy(buf, pwd, len);
+    return len;
 }
 
 //encrypts mes using userID's public key
-ciphertext AsymCrypt::encrypt(unsigned char* mess, uint8_t destID) {
+ciphertext AsymCrypt::encrypt(unsigned char* mess) {
     EVP_PKEY_CTX *ctx;
     EVP_PKEY *key;
     ciphertext c;
     size_t inlen = strlen((char*)mess), ctlen;
     unsigned char *ct;
 
-    key = this->public_keys[destID];
+    FILE *fp = fopen((this->pubk).c_str(), "r");
+    key = PEM_read_PUBKEY(fp, NULL, NULL, NULL);
+    fclose(fp);
 
     ctx = EVP_PKEY_CTX_new(key, NULL);
     if (!ctx) {
@@ -54,7 +68,13 @@ ciphertext AsymCrypt::encrypt(unsigned char* mess, uint8_t destID) {
 //decrypts mess using the server's private key
 string AsymCrypt::decrypt(ciphertext ct) {
     EVP_PKEY_CTX *ctx;
-    EVP_PKEY *key = this->privk_cb();
+    FILE *fp = fopen((this->privk).c_str(), "r");
+    if(fp == NULL) {
+        cerr<<"Couldn't open private key file"<<endl;
+        return NULL;
+    }
+    EVP_PKEY *key = PEM_read_PrivateKey(fp, NULL, pem_password_callback, (void*)this->privk_pwd.c_str());
+    fclose(fp);
     size_t ptlen;
     unsigned char* pt;
 
@@ -89,8 +109,4 @@ string AsymCrypt::decrypt(ciphertext ct) {
     return string((char*) pt);
 }
 
-AsymCrypt::~AsymCrypt() {
-    for(auto it = this->public_keys.begin(); it != this->public_keys.end(); it++)
-        EVP_PKEY_free(it->second);
-    this->public_keys.clear();
-}
+AsymCrypt::~AsymCrypt() {;}
