@@ -9,11 +9,8 @@
 
 #include "protocol.h"
 
-#define MAX_MESSAGE_SIZE 1024
-
 // TODO:
 //  - get MAX_MESSAGE_SIZE from config
-
 #define MAX_MESSAGE_SIZE 1024
 
 int StatusCodeFromRes(int code){

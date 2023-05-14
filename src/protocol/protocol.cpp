@@ -7,14 +7,14 @@ FunkyProtocol::FunkyProtocol(FunkyOptions *opt){
     this->username = opt->username;
 }
 
-HandshakeResponse FunkyProtocol::ServerHandshake(int sd){
+HandshakeResponse FunkyProtocol::RightHandshake(int sd){
     // TODO
     //  - send the username to the server
     //  - dh using RSA generated keys
     return HandshakeResponse{};
 }
 
-HandshakeResponse FunkyProtocol::ClientHandshake(int sd){
+HandshakeResponse FunkyProtocol::LeftHandshake(int sd){
     // TODO
     //  - send the username to the server
     //  - dh using RSA generated keys
@@ -25,7 +25,7 @@ HandshakeResponse FunkyProtocol::ClientHandshake(int sd){
 entity::Error FunkyProtocol::Send(int sd, std::string message){
     
     if (this->sessions_key == ""){
-        auto res = this->ClientHandshake(sd);
+        auto res = this->LeftHandshake(sd);
         if (res.err != entity::ERR_OK){
             return res.err;
         }
@@ -34,8 +34,8 @@ entity::Error FunkyProtocol::Send(int sd, std::string message){
 
     // TODO:
     //  - encrypt using session key
-    //  - add hash
-    //  - raw send
+    //  - add hash for integreity
+    //  - call raw send
 
     return entity::ERR_OK;
 }
@@ -43,7 +43,7 @@ entity::Error FunkyProtocol::Send(int sd, std::string message){
 
 entity::Response FunkyProtocol::Receive(int sd){
     if (this->sessions_key== ""){
-        auto res = this->ServerHandshake(sd);
+        auto res = this->RightHandshake(sd);
         if (res.err != entity::ERR_OK){
             return entity::Response{
                 .err = res.err

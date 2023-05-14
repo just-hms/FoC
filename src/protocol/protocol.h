@@ -3,6 +3,7 @@
 
 // TODO:
 //  - make this not accessible to outside
+//  - maybe use char * to make this usable even to send keys
 entity::Response RawReceive(int sd) noexcept;
 entity::Error RawSend(int sd, std::string message) noexcept;
 
@@ -45,8 +46,8 @@ namespace protocol {
         virtual entity::Response Receive(int sd);
         
         void SetUsername(std::string username);
-        HandshakeResponse ClientHandshake(int sd);
-        HandshakeResponse ServerHandshake(int sd);
+        HandshakeResponse LeftHandshake(int sd);
+        HandshakeResponse RightHandshake(int sd);
     };
 }
 
