@@ -2,7 +2,7 @@
 
 
 // map of currently logged users SD -> entity:User
-std::map<int, entity::User*> users;
+std::unordered_map<int, entity::User*> users;
 
 std::string ExitWithJSON(int status, std::string message=""){
     Json::StreamWriterBuilder builder;
@@ -72,6 +72,7 @@ std::string Transfer(router::Context *ctx){
     auto amount = content["amount"].asInt();
 
     auto res =  repo::Transfer(
+        ctx->user->ID,
         content["to"].asString(),
         content["amount"].asInt()
     );

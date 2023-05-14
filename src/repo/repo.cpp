@@ -29,7 +29,7 @@ int repo::Balance(std::string USER_ID){
     return 10;
 }
 
-bool repo::Transfer(std::string to, float amount){
+bool repo::Transfer(std::string USER_ID, std::string to, float amount){
     return true;
 }
 
@@ -39,6 +39,12 @@ entity::History repo::History(std::string username){
     transactions.push_back(entity::Transaction{
         .from="kek",
         .to="giovanni",
+        .amount = 10.5,
+    });
+
+    transactions.push_back(entity::Transaction{
+        .from="miao",
+        .to="kek",
         .amount = 10.5,
     });
 
