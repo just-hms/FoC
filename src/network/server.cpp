@@ -8,6 +8,12 @@
 
 #include "network.h"
 
+using namespace net;
+
+
+// Server constructor accpet a set of options to build the server object
+//
+// you must specicy a port and a protocol to use
 Server::Server(ServerOption *opt) noexcept{
     if(opt->proto == nullptr){
         std::cerr << "You must specify a protocol " << std::endl;
@@ -45,7 +51,10 @@ Server::Server(ServerOption *opt) noexcept{
     }
 }
 
-void Server::Listen(){
+// Listen handles the incoming connection and messages
+//
+// it uses the specified callbacks to handle the received messages
+void Server::Listen() noexcept{
     
     std::cout << "server starting at port :" << this->port << std::endl;
     fd_set master, read_fds;
@@ -80,6 +89,7 @@ void Server::Listen(){
             if(!FD_ISSET(fd, &read_fds))
                 continue;
 
+            // add a connection in case the full sd is the listener
             if(fd == this->listener) {
                 auto sd = this->acceptNewConnection(&master);
                 if(sd > fdmax){ 
@@ -87,10 +97,13 @@ void Server::Listen(){
                 }
                 continue;
             }
-            
+
+            // in case of a message call the proto receive
             auto res = this->proto->Receive(fd);
 
-            if (res.err == entity::ERR_TIMEOUT || res.err == entity::ERR_BROKEN) {
+            // in case of an error close the socket
+
+            if (res.second == entity::ERR_TIMEOUT || res.second == entity::ERR_BROKEN) {
                 FD_CLR(fd, &master);
                 close(fd);
 
@@ -98,38 +111,61 @@ void Server::Listen(){
                     std::cout << "Warning: no disconnetion callback specified" << std::endl;               
                     continue;
                 }
+                
+                // call the disconnected callback to make the application 
+                // know that the client disconnnected
                 this->disconnection_callback(fd);
                 continue;
             }
+
             if (this->message_callback == nullptr){
                 std::cout << "Warning: no message handler specified" << std::endl;               
                 continue;
             }
-            auto resp = this->message_callback(fd, res.content);
+            
+            // call the message callback
+            auto resp = this->message_callback(
+                fd, 
+                std::string(res.first.begin(),res.first.end())
+            );
 
+            // if there is no response don't respond
             if (resp == "") continue;
+
+            // otherwise send the response
 
             auto err = this->proto->Send(fd,resp);
 
             if (err == entity::ERR_BROKEN) {
                 FD_CLR(fd, &master);
                 close(fd);
+
+                if (this->disconnection_callback == nullptr){
+                    std::cout << "Warning: no disconnetion callback specified" << std::endl;               
+                    continue;
+                }
+                
+                // call the disconnected callback to make the application 
+                // know that the client disconnnected
+                this->disconnection_callback(fd);                
                 continue;
             }
         }        
     }
 }
 
-void Server::SetDisconnectionHandler(DisconnectionHandler callback) {
+// SetDisconnectionHandler sets the disconnection_callback to the one specified
+void Server::SetDisconnectionHandler(DisconnectionHandler callback) noexcept {
     this->disconnection_callback = callback;
 }
 
-
-void Server::SetRequestHandler(RequestHandler callback) {
+// SetRequestHandler sets the message_callback to the one specified
+void Server::SetRequestHandler(RequestHandler callback) noexcept {
     this->message_callback = callback;
 }
 
-int Server::acceptNewConnection(fd_set *master){
+// acceptNewConnection add the socket to the list of available sockets
+int Server::acceptNewConnection(fd_set *master) noexcept {
     sockaddr_in cl_addr;
     auto addrlen = sizeof(cl_addr);
     
@@ -143,5 +179,5 @@ int Server::acceptNewConnection(fd_set *master){
     return newsd;
 }
 
-
-Server::~Server() {;}
+// ~Server is the server distructor
+Server::~Server() noexcept {;}

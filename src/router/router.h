@@ -9,6 +9,9 @@
 #include <iostream>
 
 
+// TODO: maybe make the router an object
+//  - create a map of handlers
+
 namespace router {
 
     typedef int reqstatus;

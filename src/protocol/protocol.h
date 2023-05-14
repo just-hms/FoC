@@ -1,11 +1,9 @@
 #include <string>
+#include <span>
 #include "./../entity/entity.h"
 
-// TODO:
-//  - make this not accessible to outside
-//  - maybe use char * to make this usable even to send keys
-entity::Response RawReceive(int sd) noexcept;
-entity::Error RawSend(int sd, std::string message) noexcept;
+std::pair<std::span<uint8_t>,entity::Error> RawReceive(int sd) noexcept;
+entity::Error RawSend(int sd, std::span<uint8_t> message) noexcept;
 
 namespace protocol {
     
@@ -13,41 +11,52 @@ namespace protocol {
     public:
         virtual ~IProtocol() {}
         virtual entity::Error Send(int sd, std::string message) = 0;
-        virtual entity::Response Receive(int sd) = 0;
+        virtual std::pair<std::string,entity::Error> Receive(int sd) = 0;
     };
 
     class RawProtocol : public protocol::IProtocol{
     public:
         ~RawProtocol() {}
-        virtual entity::Error Send(int sd, std::string message) { return RawSend(sd, message); }
-        virtual entity::Response Receive(int sd) { return RawReceive(sd); }
+        virtual entity::Error Send(int sd, std::string message) {
+
+            auto vec = std::vector<uint8_t>(
+                message.begin(),
+                message.end()
+            );
+
+            return RawSend(
+                sd, 
+                std::span<uint8_t>(vec)
+            );
+        }
+        virtual std::pair<std::string,entity::Error> Receive(int sd) { 
+            auto res = RawReceive(sd);
+            return {
+                std::string(res.first.begin(), res.first.end()),
+                res.second,
+            };
+        }
     };
 
     struct FunkyOptions {
         std::string username;
     };
 
-    struct HandshakeResponse {
-        std::string sessionkey;
-        entity::Error err;
-    };
-
-    class FunkyProtocol : public protocol::IProtocol{
+    class FunkyProtocol : public protocol::IProtocol {
     private:
         std::string sessions_key;
         std::string username;
     public:
-        // TODO:
-        //  - edit constructor to accept cfg
+        // TODO: edit constructor to accept cfg
         ~FunkyProtocol() {}
         FunkyProtocol(FunkyOptions *opt);
-        
+
         virtual entity::Error Send(int sd, std::string message);
-        virtual entity::Response Receive(int sd);
+        virtual std::pair<std::string,entity::Error> Receive(int sd);
         
         void SetUsername(std::string username);
-        HandshakeResponse LeftHandshake(int sd);
-        HandshakeResponse RightHandshake(int sd);
+        std::pair<std::span<uint8_t>,entity::Error> LeftHandshake(int sd);
+        std::pair<std::span<uint8_t>,entity::Error> RightHandshake(int sd);
     };
 }
 

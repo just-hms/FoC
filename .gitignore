@@ -1,3 +1,8 @@
 # exclude files but keep build folder
 build/*
 !build/.gitkeep
+
+
+# ide
+.vscode/
+.idea/

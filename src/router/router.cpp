@@ -1,4 +1,5 @@
 #include "router.h"
+#include <type_traits>
 
 
 // map of currently logged users SD -> entity:User
@@ -35,7 +36,7 @@ std::string Login(router::Context *ctx){
         );
     }
 
-    std::cout << res->username  << " connected" << std::endl;  
+    std::cout << res->username  << " connected ";  
     // add user to the map of logged in users
     users[ctx->connectionID] = res; 
 
@@ -55,6 +56,7 @@ std::string Balance(router::Context *ctx){
     out["status"] = router::STATUS_OK;
     out["balance"] = balance;
     std::string str = Json::writeString(builder, out);
+
     return str;
 }
 
@@ -120,11 +122,10 @@ void router::Disconnect(int sd){
 
     std::cout << it->second->username  << " disconnected" << std::endl;  
 
+    // TODO use smart pointers
     // remove the user from the heap
     delete it->second;
     users.erase(sd);
-
-
 }
 
 

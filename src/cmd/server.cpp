@@ -7,18 +7,20 @@
 
 
 int main() {
-    Config cfg{};
+    config::Config cfg{};
 
     protocol::RawProtocol p;
     
-    ServerOption opt{
+    net::ServerOption opt{
         .port = cfg.ServerPort,
         .proto = &p,
     };
 
-    Server server(&opt);
+    net::Server server(&opt);
+
     server.SetRequestHandler(router::Handle); 
     server.SetDisconnectionHandler(router::Disconnect); 
     server.Listen();
+
     return 0;
 }
