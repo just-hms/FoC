@@ -103,19 +103,8 @@ void Server::Listen() noexcept{
             auto res = this->proto->Receive(fd);
 
             // in case of an error close the socket
-
             if (res.second == entity::ERR_TIMEOUT || res.second == entity::ERR_BROKEN) {
-                FD_CLR(fd, &master);
-                close(fd);
-
-                if (this->disconnection_callback == nullptr){
-                    std::cout << "Warning: no disconnetion callback specified" << std::endl;               
-                    continue;
-                }
-                
-                // call the disconnected callback to make the application 
-                // know that the client disconnnected
-                this->disconnection_callback(fd);
+                this->disconnect(&master, fd);
                 continue;
             }
 
@@ -137,18 +126,8 @@ void Server::Listen() noexcept{
 
             auto err = this->proto->Send(fd,resp);
 
-            if (err == entity::ERR_BROKEN) {
-                FD_CLR(fd, &master);
-                close(fd);
-
-                if (this->disconnection_callback == nullptr){
-                    std::cout << "Warning: no disconnetion callback specified" << std::endl;               
-                    continue;
-                }
-                
-                // call the disconnected callback to make the application 
-                // know that the client disconnnected
-                this->disconnection_callback(fd);                
+            if (err == entity::ERR_BROKEN || err == entity::ERR_TIMEOUT) {
+                this->disconnect(&master, fd);
                 continue;
             }
         }        
@@ -178,6 +157,22 @@ int Server::acceptNewConnection(fd_set *master) noexcept {
 
     FD_SET(newsd, master); 
     return newsd;
+}
+
+// disconnect handle the disconnection process
+void Server::disconnect(fd_set *master, int sd) noexcept {
+    // remove the socket from the list and close it    
+    FD_CLR(sd, master);
+    close(sd);
+
+    if (this->disconnection_callback == nullptr){
+        std::cout << "Warning: no disconnetion callback specified" << std::endl;               
+        return;
+    }
+    
+    // call the disconnected callback to make the application 
+    // know that the client disconnnected
+    this->disconnection_callback(sd);                
 }
 
 void Server::Stop() noexcept{

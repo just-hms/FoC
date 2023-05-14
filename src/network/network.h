@@ -58,5 +58,6 @@ namespace net {
         void SetDisconnectionHandler(DisconnectionHandler callback) noexcept;
     private:
         int acceptNewConnection(fd_set *master) noexcept;
+        void disconnect(fd_set *master, int sd) noexcept;
     };
 }

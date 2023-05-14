@@ -17,6 +17,6 @@ clean:
 				rm -v ./$(BUILD)/*
 
 test:			$(SOURCES)
-				$(CC) -o ./$(BUILD)/test ./test/pingpong.cpp $(SOURCES) $(FLAGS)
+				$(CC) -o ./$(BUILD)/test ./test/test.cpp ./test/*_test.cpp $(SOURCES) $(FLAGS)
 				./build/test
 

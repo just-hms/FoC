@@ -21,7 +21,7 @@ Client::Client(ClientOption* opt) noexcept {
 
     this->sd = socket(
         AF_INET, 
-        SOCK_STREAM ,
+        SOCK_STREAM,
         0
     );
 
