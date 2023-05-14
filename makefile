@@ -3,6 +3,8 @@ SOURCES=./src/config/*.cpp ./src/entity/*.cpp ./src/network/*.cpp ./src/protocol
 BUILD=./build
 FLAGS=-lcrypto -ljsoncpp -g -std=c++2a
 
+.PHONY: test clean
+
 build: 			build_server build_client
 
 build_server: 	$(SOURCES)
@@ -14,4 +16,7 @@ build_client: 	$(SOURCES)
 clean:
 				rm -v ./$(BUILD)/*
 
+test:			$(SOURCES)
+				$(CC) -o ./$(BUILD)/test ./test/pingpong.cpp $(SOURCES) $(FLAGS)
+				./build/test
 

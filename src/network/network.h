@@ -45,6 +45,7 @@ namespace net {
     private:
         int listener;
         int port;
+        bool stop = false;
         protocol::IProtocol* proto;
         RequestHandler message_callback;
         DisconnectionHandler disconnection_callback;
@@ -52,6 +53,7 @@ namespace net {
         Server(ServerOption *opt) noexcept;
         ~Server() noexcept;
         void Listen() noexcept;
+        void Stop() noexcept;
         void SetRequestHandler(RequestHandler callback) noexcept;
         void SetDisconnectionHandler(DisconnectionHandler callback) noexcept;
     private:

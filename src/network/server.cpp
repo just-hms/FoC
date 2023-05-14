@@ -73,7 +73,8 @@ void Server::Listen() noexcept{
 
     auto fdmax = listener;          
 
-    while(true){
+    while(!this->stop){
+        
         read_fds = master;     
     
         select(
@@ -179,5 +180,10 @@ int Server::acceptNewConnection(fd_set *master) noexcept {
     return newsd;
 }
 
+void Server::Stop() noexcept{
+    this->stop = true;
+}
 // ~Server is the server distructor
 Server::~Server() noexcept {;}
+
+
