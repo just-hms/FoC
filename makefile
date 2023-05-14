@@ -1,5 +1,5 @@
 CC=g++
-SOURCES=./src/config/*.cpp ./src/network/*.cpp 
+SOURCES=./src/config/*.cpp ./src/network/*.cpp ./src/protocol/*.cpp 
 BUILD=./build
 FLAGS=-lcrypto -ljsoncpp -g
 

@@ -6,18 +6,26 @@
 
 #include "network.h"
 
+
 Client::Client(ClientOption* opt) {
+    if(opt->proto == nullptr){
+        std::cerr << "You must specify a protocol " << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    this->proto = opt->proto;
+
     this->sd = socket(
         AF_INET, 
         SOCK_STREAM ,
         0
     );
 
+
     if (this->sd == -1) {
         std::cerr << "Failed to create socket " << std::endl;
         exit(EXIT_FAILURE);
     }
-
 
     if (opt->timeout > 0) {
         
@@ -44,7 +52,7 @@ Client::Client(ClientOption* opt) {
     this->server_port = opt->port;
 }
 
-Error Client::Connect() {
+entity::Error Client::Connect() {
     sockaddr_in server_address{};
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
@@ -57,19 +65,21 @@ Error Client::Connect() {
     );
 
     if (res == -1) {
-        return ERR_BROKEN;
+        return entity::ERR_BROKEN;
     }
-    return ERR_OK;
+    return entity::ERR_OK;
 }
 
-Response Client::Request(std::string message) {
-    auto err = Send(this->sd, message);
+entity::Response Client::Request(std::string message) {
+    auto err = this->proto->Send(this->sd, message);
 
-    if (err != ERR_OK) {
-        return Response{
+    if (err != entity::ERR_OK) {
+        return entity::Response{
             .err = err
         };
     }
     
-    return Receive(this->sd);
+    return this->proto->Receive(this->sd);
 }
+
+Client::~Client() {;}

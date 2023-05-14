@@ -9,8 +9,14 @@
 #include "network.h"
 
 Server::Server(ServerOption *opt) noexcept{
+    if(opt->proto == nullptr){
+        std::cerr << "You must specify a protocol " << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
     this->port = opt->port;
-    
+    this->proto = opt->proto;
+
     // create a non blocking socket
     this->listener = socket(
         AF_INET, 
@@ -82,9 +88,9 @@ void Server::Listen(){
                 continue;
             }
             
-            auto res = Receive(fd);
+            auto res = this->proto->Receive(fd);
 
-            if (res.err == ERR_TIMEOUT || res.err == ERR_BROKEN) {
+            if (res.err == entity::ERR_TIMEOUT || res.err == entity::ERR_BROKEN) {
                 FD_CLR(fd, &master);
                 close(fd);
                 continue;
@@ -97,9 +103,9 @@ void Server::Listen(){
 
             if (resp == "") continue;
 
-            auto err = Send(fd,resp);
+            auto err = this->proto->Send(fd,resp);
 
-            if (err == ERR_BROKEN) {
+            if (err == entity::ERR_BROKEN) {
                 FD_CLR(fd, &master);
                 close(fd);
                 continue;
@@ -125,3 +131,6 @@ int Server::acceptNewConnection(fd_set *master){
     FD_SET(newsd, master); 
     return newsd;
 }
+
+
+Server::~Server() {;}

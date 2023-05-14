@@ -4,11 +4,14 @@
 
 int main() {
     Config cfg{};
-    
+
+    protocol::RawProtocol p;
+
     ClientOption opt{
         .server_ip = "127.0.0.1",
         .port = cfg.ServerPort,
-        .timeout = 200
+        .proto = &p,
+        .timeout = 200,
     };
 
     Client client(&opt);
@@ -20,7 +23,7 @@ int main() {
     std::cout << "content: " << res.content << std::endl;
    
     // timeout check
-    auto res2 = client.Request("kek");
+    auto res2 = client.Request("{\"username\":\"kek\", \"password\":\"kek\"}");
     std::cout << "timed out: " << std::endl;
 
     return 0;
