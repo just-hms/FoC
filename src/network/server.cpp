@@ -93,13 +93,19 @@ void Server::Listen(){
             if (res.err == entity::ERR_TIMEOUT || res.err == entity::ERR_BROKEN) {
                 FD_CLR(fd, &master);
                 close(fd);
+
+                if (this->disconnection_callback == nullptr){
+                    std::cout << "Warning: no disconnetion callback specified" << std::endl;               
+                    continue;
+                }
+                this->disconnection_callback(fd);
                 continue;
             }
-            if (this->callback == nullptr){
+            if (this->message_callback == nullptr){
                 std::cout << "Warning: no message handler specified" << std::endl;               
                 continue;
             }
-            auto resp = callback(fd, res.content);
+            auto resp = this->message_callback(fd, res.content);
 
             if (resp == "") continue;
 
@@ -114,8 +120,13 @@ void Server::Listen(){
     }
 }
 
-void Server::SetHandler(handler callback) {
-    this->callback = callback;
+void Server::SetDisconnectionHandler(DisconnectionHandler callback) {
+    this->disconnection_callback = callback;
+}
+
+
+void Server::SetRequestHandler(RequestHandler callback) {
+    this->message_callback = callback;
 }
 
 int Server::acceptNewConnection(fd_set *master){

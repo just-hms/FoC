@@ -7,7 +7,8 @@
 
 // general structures
 
-typedef std::function<std::string(int, std::string)> handler;
+typedef std::function<std::string(int, std::string)> RequestHandler;
+typedef std::function<void(int)> DisconnectionHandler;
 
 // Client class
 struct ClientOption {
@@ -44,12 +45,14 @@ private:
     int listener;
     int port;
     protocol::IProtocol* proto;
-    handler callback;
+    RequestHandler message_callback;
+    DisconnectionHandler disconnection_callback;
 public:
     Server(ServerOption *opt) noexcept;
     ~Server();
     void Listen();
-    void SetHandler(handler callback);
+    void SetRequestHandler(RequestHandler callback);
+    void SetDisconnectionHandler(DisconnectionHandler callback);
 private:
     int acceptNewConnection(fd_set *master);
 };
