@@ -1,6 +1,5 @@
 #include <string>
 #include <span>
-#include <memory>
 
 #include "./../entity/entity.h"
 
