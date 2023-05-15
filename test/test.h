@@ -10,7 +10,7 @@
 
 #define ASSERT(expected, actual) \
     if ((expected) != (actual)) { \
-        std::cerr << __FUNCTION__ << " expected: " << (expected) << " got: " << (actual) << " at line " << __LINE__ << std::endl; \
+        std::cerr << "\033[31m" << __FUNCTION__ << " expected: " << (expected) << " got: " << (actual) << " at line " << __LINE__ << "\033[0m" << std::endl; \
         return 1; \
     }
 

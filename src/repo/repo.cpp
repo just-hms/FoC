@@ -13,17 +13,6 @@ entity::User* repo::Login(std::string username, std::string password){
     return us;
 }
 
-entity::User* repo::GetByID(std::string userID){
-    if (userID == "wejhb872bu9324"){
-        return nullptr;
-    }
-
-    auto us = new entity::User{};
-    us->ID = "wejhb872bu9324";
-    us->username = "kek";
-    us->password = "kek";
-    return us;
-}
 
 int repo::Balance(std::string USER_ID){
     return 10;

@@ -53,7 +53,7 @@ std::pair<std::string,entity::Error> FunkyProtocol::Receive(int sd){
             return {{},res.second};
         }
         
-        // maybe always use a span   
+        // TODO: maybe always use a span   
         this->sessions_key = std::string(
             res.first.begin(), 
             res.first.end()

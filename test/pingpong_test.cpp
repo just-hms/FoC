@@ -21,9 +21,10 @@ int TestRawPingPong() {
     net::Server s(&server_opt);
 
     s.SetRequestHandler([](int sd, std::string message)->std::string {
+        std::cout << "[server] received : "  << message << std::endl; 
         return (message == "ping") ?
             "pong":
-            "";
+            "not pong";
     });
 
     // start the server in another thread
@@ -44,8 +45,8 @@ int TestRawPingPong() {
     server_thread.join();
 
     // check the response
-    ASSERT(router::STATUS_OK, res.second);
     ASSERT("pong", res.first);
+    ASSERT(entity::ERR_OK, res.second);
 
     return 0;
 }

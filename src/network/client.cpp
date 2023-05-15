@@ -84,12 +84,7 @@ std::pair<std::string,entity::Error> Client::Request(std::string message) noexce
         };
     }
     
-    auto res = this->proto->Receive(this->sd);
-    
-    return {
-        std::string(res.first.begin(), res.first.end()), 
-        res.second
-    };
+    return this->proto->Receive(this->sd);
 }
 
 // ~Client is the client distructor
