@@ -73,13 +73,13 @@ entity::Error Client::Connect() noexcept{
 }
 
 // Request tries to make a request to the server, returns an error in case of failing
-std::pair<std::string,entity::Error> Client::Request(std::string message) noexcept{
+std::tuple<std::string,entity::Error> Client::Request(std::string message) noexcept{
     
     auto err = this->proto->Send(this->sd, message);
 
     if (err != entity::ERR_OK) {
         return {
-            {},
+            "",
             err
         };
     }

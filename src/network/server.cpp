@@ -100,10 +100,10 @@ void Server::Listen() noexcept{
             }
 
             // in case of a message call the proto receive
-            auto res = this->proto->Receive(fd);
+            auto [res, err] = this->proto->Receive(fd);
 
             // in case of an error close the socket
-            if (res.second == entity::ERR_TIMEOUT || res.second == entity::ERR_BROKEN) {
+            if (err == entity::ERR_TIMEOUT || err == entity::ERR_BROKEN) {
                 this->disconnect(&master, fd);
                 continue;
             }
@@ -116,7 +116,7 @@ void Server::Listen() noexcept{
             // call the message callback
             auto resp = this->message_callback(
                 fd, 
-                std::string(res.first.begin(),res.first.end())
+                std::string(res.begin(),res.end())
             );
 
             // if there is no response don't respond
@@ -124,7 +124,7 @@ void Server::Listen() noexcept{
 
             // otherwise send the response
 
-            auto err = this->proto->Send(fd,resp);
+            err = this->proto->Send(fd,resp);
 
             if (err == entity::ERR_BROKEN || err == entity::ERR_TIMEOUT) {
                 this->disconnect(&master, fd);

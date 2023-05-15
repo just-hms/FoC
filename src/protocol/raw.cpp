@@ -10,10 +10,10 @@ entity::Error RawProtocol::Send(int sd, std::string message) {
     );
 }
 
-std::pair<std::string,entity::Error> RawProtocol::Receive(int sd) { 
-    auto res = RawReceive(sd);
+std::tuple<std::string,entity::Error> RawProtocol::Receive(int sd) { 
+    auto [res, err] = RawReceive(sd);
     return {
-        std::string(res.first.begin(), res.first.end()),
-        res.second,
+        std::string(res.begin(), res.end()),
+        err,
     };
 }
