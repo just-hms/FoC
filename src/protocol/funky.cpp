@@ -8,7 +8,7 @@ FunkyProtocol::FunkyProtocol(FunkyOptions *opt){
     this->username = opt->username;
 }
 
-std::pair<std::span<uint8_t>,entity::Error> FunkyProtocol::RightHandshake(int sd){
+std::tuple<std::span<uint8_t>,entity::Error> FunkyProtocol::RightHandshake(int sd){
     // TODO implement the RightHandshake
     //  - send the username to the server
     //  - dh using RSA generated keys
@@ -16,7 +16,7 @@ std::pair<std::span<uint8_t>,entity::Error> FunkyProtocol::RightHandshake(int sd
 }
 
 
-std::pair<std::span<uint8_t>,entity::Error> FunkyProtocol::LeftHandshake(int sd){
+std::tuple<std::span<uint8_t>,entity::Error> FunkyProtocol::LeftHandshake(int sd){
     // TODO implement the LeftHandshake
     //  - send the username to the server
     //  - dh using RSA generated keys
@@ -26,15 +26,15 @@ std::pair<std::span<uint8_t>,entity::Error> FunkyProtocol::LeftHandshake(int sd)
 entity::Error FunkyProtocol::Send(int sd, std::string message){
     
     if (this->sessions_key == ""){
-        auto res = this->LeftHandshake(sd);
-        if (res.second != entity::ERR_OK){
-            return res.second;
+        auto [res, err] = this->LeftHandshake(sd);
+        if (err != entity::ERR_OK){
+            return err;
         }
         
         // maybe always use a span   
         this->sessions_key = std::string(
-            res.first.begin(), 
-            res.first.end()
+            res.begin(), 
+            res.end()
         );
     }
 
@@ -46,17 +46,20 @@ entity::Error FunkyProtocol::Send(int sd, std::string message){
     return entity::ERR_OK;
 }
 
-std::pair<std::string,entity::Error> FunkyProtocol::Receive(int sd){
+std::tuple<std::string,entity::Error> FunkyProtocol::Receive(int sd){
     if (this->sessions_key == ""){
-        auto res = this->RightHandshake(sd);
-        if (res.second != entity::ERR_OK){
-            return {{},res.second};
+        auto [res, err] = this->RightHandshake(sd);
+        if (err != entity::ERR_OK){
+            return {
+                "",
+                err
+            };
         }
         
         // TODO: maybe always use a span   
         this->sessions_key = std::string(
-            res.first.begin(), 
-            res.first.end()
+            res.begin(), 
+            res.end()
         );
     }
 
@@ -66,5 +69,8 @@ std::pair<std::string,entity::Error> FunkyProtocol::Receive(int sd){
     //  - extract hash and check for integrity
     //  - decrypt using session key
 
-    return {};
+    return {
+        "",
+        entity::ERR_BROKEN
+    };
 }

@@ -4,16 +4,15 @@
 // map of currently logged users SD -> entity:User
 std::unordered_map<int, std::shared_ptr<entity::User>> users;
 
-std::string ExitWithJSON(int status, std::string message=""){
+Json::Value ExitWithJSON(int status, std::string message=""){
     Json::StreamWriterBuilder builder;
     Json::Value out;
     out["status"] = status;
     out["message"] = message;
-    std::string str = Json::writeString(builder, out);
-    return str;
+    return out;
 }
 
-std::string Login(router::Context *ctx){
+Json::Value Login(router::Context *ctx){
     if (ctx->user != nullptr){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
@@ -30,19 +29,18 @@ std::string Login(router::Context *ctx){
 
     if (!res){
         return ExitWithJSON(
-            router::STATUS_OK, 
+            router::STATUS_UNAUTHORIZED, 
             "wrong username or password"
         );
     }
 
-    std::cout << "[server] " << res->username <<  " disconnnected" << std::endl;
     // add user to the map of logged in users
     users[ctx->connectionID] = res; 
 
     return ExitWithJSON(router::STATUS_OK);
 }
 
-std::string Balance(router::Context *ctx){
+Json::Value Balance(router::Context *ctx){
     if (ctx->user == nullptr){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
@@ -50,16 +48,14 @@ std::string Balance(router::Context *ctx){
     auto balance = repo::Balance(ctx->user->ID);
 
     // return the custom balance response
-    Json::StreamWriterBuilder builder;
     Json::Value out;
     out["status"] = router::STATUS_OK;
     out["balance"] = balance;
-    std::string str = Json::writeString(builder, out);
-
-    return str;
+    
+    return out;
 }
 
-std::string Transfer(router::Context *ctx){
+Json::Value Transfer(router::Context *ctx){
     if (ctx->user == nullptr){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
@@ -85,7 +81,7 @@ std::string Transfer(router::Context *ctx){
     return ExitWithJSON(router::STATUS_OK);
 }
 
-std::string History(router::Context *ctx){
+Json::Value History(router::Context *ctx){
     if (ctx->user == nullptr){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
@@ -93,7 +89,6 @@ std::string History(router::Context *ctx){
     auto history = repo::History(ctx->user->username);
 
     // return the custom balance history
-    Json::StreamWriterBuilder builder;
     Json::Value out;
     out["status"] = router::STATUS_OK;
     out["history"] = Json::arrayValue;
@@ -108,8 +103,7 @@ std::string History(router::Context *ctx){
         out["history"].append(jsonTransfer);
     }
     
-    std::string str = Json::writeString(builder, out);
-    return str;
+    return out;
 }
 
 
@@ -118,7 +112,9 @@ void router::Disconnect(int sd){
     if (it == users.end()){
         return;
     }
-    std::cout << "[server] " << it->second->username <<  " disconnnected" << std::endl;
+
+    std::string route = "logout";
+    std::cout << "/" << route <<  std::string(10 - route.length(), ' ' ) << 201 << std::endl; 
     users.erase(sd);
 }
 
@@ -127,11 +123,6 @@ std::string router::Handle(int sd, std::string message){
     Json::Reader reader;
     Json::Value content;
     reader.parse(message, content);
-
-    auto type = content["type"].asString();
-    if (type == ""){
-        return ExitWithJSON(STATUS_BAD_REQUEST);
-    } 
 
     std::shared_ptr<entity::User> us = nullptr;
 
@@ -150,10 +141,20 @@ std::string router::Handle(int sd, std::string message){
         .connectionID = sd,
     };
 
-    if (type == "login")    return Login(&ctx);
-    if (type == "balance")  return Balance(&ctx);
-    if (type == "transfer") return Transfer(&ctx);
-    if (type == "history")  return History(&ctx);
 
-    return ExitWithJSON(STATUS_BAD_REQUEST);
+    auto out = ExitWithJSON(STATUS_NOT_FOUND); 
+
+    auto route = content["route"].asString();
+
+    if (route == "login")           out = Login(&ctx);
+    else if (route == "balance")    out = Balance(&ctx);
+    else if (route == "transfer")   out = Transfer(&ctx);
+    else if (route == "history")    out = History(&ctx);
+
+    // log the request
+    std::cout << "/" << route <<  std::string(10 - route.length(), ' ' ) << out["status"] << std::endl; 
+
+    Json::StreamWriterBuilder builder;
+    std::string str = Json::writeString(builder, out);
+    return str;
 }

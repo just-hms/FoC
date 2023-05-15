@@ -9,20 +9,17 @@
 bool Login(net::Client * client, std::string username, std::string password){
     Json::StreamWriterBuilder builder;
     Json::Value out;
-    out["type"] = "login";
+    out["route"] = "login";
     out["content"]["username"] = username;
     out["content"]["password"] = password;
 
     std::string str = Json::writeString(builder, out);
 
-    auto res = client->Request(str);
-
-    std::cout << res.first << std::endl; 
-    std::cout << res.second << std::endl;
+    auto [res, _] = client->Request(str);
 
     Json::Reader reader;
     Json::Value json;
-    reader.parse(res.first, json);
+    reader.parse(res, json);
     
     return json["status"].asInt() == router::STATUS_OK;
 }
@@ -30,17 +27,17 @@ bool Login(net::Client * client, std::string username, std::string password){
 bool Transfer(net::Client * client, std::string username, float amount){
     Json::StreamWriterBuilder builder;
     Json::Value out;
-    out["type"] = "transfer";
+    out["route"] = "transfer";
     out["content"]["to"] = username;
     out["content"]["amount"] = amount;
 
     std::string str = Json::writeString(builder, out);
 
-    auto res = client->Request(str);
+    auto [res, _] = client->Request(str);
 
     Json::Reader reader;
     Json::Value json;
-    reader.parse(res.first, json);
+    reader.parse(res, json);
 
     return json["status"].asInt() == router::STATUS_OK;
 }
@@ -48,15 +45,15 @@ bool Transfer(net::Client * client, std::string username, float amount){
 void History(net::Client * client){
     Json::StreamWriterBuilder builder;
     Json::Value out;
-    out["type"] = "history";
+    out["route"] = "history";
 
     std::string str = Json::writeString(builder, out);
 
-    auto res = client->Request(str);
+    auto [res, _] = client->Request(str);
 
     Json::Reader reader;
     Json::Value json;
-    reader.parse(res.first, json);
+    reader.parse(res, json);
 
     if (json["status"].asInt() != router::STATUS_OK){
         std::cout << "bad request" << std::endl; 
@@ -70,15 +67,15 @@ void History(net::Client * client){
 void Balance(net::Client * client){
     Json::StreamWriterBuilder builder;
     Json::Value out;
-    out["type"] = "balance";
+    out["route"] = "balance";
 
     std::string str = Json::writeString(builder, out);
 
-    auto res = client->Request(str);
+    auto [res, _] = client->Request(str);
 
     Json::Reader reader;
     Json::Value json;
-    reader.parse(res.first, json);
+    reader.parse(res, json);
 
     if (json["status"].asInt() != router::STATUS_OK){
         std::cout << "bad request" << std::endl; 
@@ -105,7 +102,7 @@ int main() {
     net::Client client(&opt);
     client.Connect();
     
-
+    Login(&client, "kek", "bau") ;
     Login(&client, "kek", "kek") ;
     Balance(&client) ;
     Transfer(&client, "giovanni", 10.5);

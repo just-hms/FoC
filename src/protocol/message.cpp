@@ -15,14 +15,14 @@
 // TODO: get MAX_MESSAGE_SIZE from config
 #define MAX_MESSAGE_SIZE 1024
 
-std::pair<std::vector<uint8_t>,entity::Error> RawReceive(int sd) noexcept {
+std::tuple<std::vector<uint8_t>,entity::Error> RawReceive(int sd) noexcept {
     auto web_len = 0;
 
     auto res = recv(sd, (void*) &web_len, sizeof(size_t), 0);
 
     if (res <= 0){
         return {
-            {}, 
+            std::vector<uint8_t>(), 
             entity::StatusCodeFromCSocketErrorCodes(res)
         };
     }
@@ -31,7 +31,7 @@ std::pair<std::vector<uint8_t>,entity::Error> RawReceive(int sd) noexcept {
 
     if (len < 0 || len > MAX_MESSAGE_SIZE){
         return {
-            {}, 
+            std::vector<uint8_t>(), 
             entity::ERR_BROKEN
         };
     }

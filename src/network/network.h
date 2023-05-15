@@ -30,7 +30,7 @@ namespace net {
         Client(ClientOption *opt) noexcept;
         ~Client() noexcept;
         entity::Error Connect() noexcept;
-        std::pair<std::string,entity::Error> Request(std::string message) noexcept;
+        std::tuple<std::string,entity::Error> Request(std::string message) noexcept;
     };
 
     struct ServerOption {
