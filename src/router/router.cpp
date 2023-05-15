@@ -1,9 +1,8 @@
 #include "router.h"
-#include <type_traits>
 
 
 // map of currently logged users SD -> entity:User
-std::unordered_map<int, entity::User*> users;
+std::unordered_map<int, std::shared_ptr<entity::User>> users;
 
 std::string ExitWithJSON(int status, std::string message=""){
     Json::StreamWriterBuilder builder;
@@ -119,12 +118,7 @@ void router::Disconnect(int sd){
     if (it == users.end()){
         return;
     }
-
     std::cout << "[server] " << it->second->username <<  " disconnnected" << std::endl;
-
-    // TODO use smart pointers
-    // remove the user from the heap
-    delete it->second;
     users.erase(sd);
 }
 
@@ -139,7 +133,7 @@ std::string router::Handle(int sd, std::string message){
         return ExitWithJSON(STATUS_BAD_REQUEST);
     } 
 
-    entity::User *us = nullptr;
+    std::shared_ptr<entity::User> us = nullptr;
 
     // extract the user from the map
     auto it = users.find(sd);

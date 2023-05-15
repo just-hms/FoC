@@ -7,6 +7,7 @@
 #include <jsoncpp/json/value.h>
 #include <unordered_map>
 #include <iostream>
+#include <memory>
 
 
 // TODO: maybe make the router an object
@@ -21,7 +22,7 @@ namespace router {
     #define STATUS_UNAUTHORIZED    reqstatus(401)
 
     struct Context{
-        entity::User* user;
+        std::shared_ptr<entity::User> user;
         Json::Value req;
         int connectionID;
     };

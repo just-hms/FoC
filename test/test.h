@@ -14,5 +14,9 @@
         return 1; \
     }
 
+#define TEST_PASSED() \
+    std::cout << __FUNCTION__ << "[OK]" << std::endl; \
+    return 0;
+
 int TestRawPingPong();
 int TestFunkyPingPong();

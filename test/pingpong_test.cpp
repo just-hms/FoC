@@ -48,11 +48,11 @@ int TestRawPingPong() {
     ASSERT("pong", res.first);
     ASSERT(entity::ERR_OK, res.second);
 
-    return 0;
+    TEST_PASSED();
 }
 
 int TestFunkyPingPong() {
     // TODO
     //  - write this
-    return 0;
+    TEST_PASSED();
 }

@@ -1,12 +1,13 @@
 #include "repo.h"
+#include <memory>
 #include <vector>
 
-entity::User* repo::Login(std::string username, std::string password){
+std::shared_ptr<entity::User> repo::Login(std::string username, std::string password){
     if (username!="kek" && password != "kek"){
         return nullptr;
     }
 
-    auto us = new entity::User{};
+    auto us = std::make_shared<entity::User>();
     us->ID = "wejhb872bu9324";
     us->username = "kek";
     us->password = "kek";
