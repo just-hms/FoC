@@ -6,8 +6,12 @@
 
 #include "network.h"
 
+using namespace net;
 
-Client::Client(ClientOption* opt) {
+// Client constructor
+//
+// you must a port and ip of the server to connect to and a protocol to use 
+Client::Client(ClientOption* opt) noexcept {
     if(opt->proto == nullptr){
         std::cerr << "You must specify a protocol " << std::endl;
         exit(EXIT_FAILURE);
@@ -17,7 +21,7 @@ Client::Client(ClientOption* opt) {
 
     this->sd = socket(
         AF_INET, 
-        SOCK_STREAM ,
+        SOCK_STREAM,
         0
     );
 
@@ -52,7 +56,8 @@ Client::Client(ClientOption* opt) {
     this->server_port = opt->port;
 }
 
-entity::Error Client::Connect() {
+// Connect tries to connect to the specified server
+entity::Error Client::Connect() noexcept{
     sockaddr_in server_address{};
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
@@ -64,22 +69,23 @@ entity::Error Client::Connect() {
         sizeof(server_address)
     );
 
-    if (res == -1) {
-        return entity::ERR_BROKEN;
-    }
-    return entity::ERR_OK;
+    return entity::StatusCodeFromCSocketErrorCodes(res);
 }
 
-entity::Response Client::Request(std::string message) {
+// Request tries to make a request to the server, returns an error in case of failing
+std::pair<std::string,entity::Error> Client::Request(std::string message) noexcept{
+    
     auto err = this->proto->Send(this->sd, message);
 
     if (err != entity::ERR_OK) {
-        return entity::Response{
-            .err = err
+        return {
+            {},
+            err
         };
     }
     
     return this->proto->Receive(this->sd);
 }
 
-Client::~Client() {;}
+// ~Client is the client distructor
+Client::~Client() noexcept {;}

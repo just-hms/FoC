@@ -5,8 +5,10 @@
 #include <jsoncpp/json/value.h>
 
 
-class Config {
-public:
-    int ServerPort;
-    Config() noexcept;
-};
+namespace config {
+    class Config {
+    public:
+        int ServerPort;
+        Config() noexcept;
+    };
+}

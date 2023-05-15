@@ -1,0 +1,7 @@
+[
+    { 
+        "directory": "/home/user/llvm/build",
+        "command": "/usr/bin/clang++ -Irelative -std=c++2a",
+        "file": "file.cc" 
+    }
+]

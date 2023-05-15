@@ -3,53 +3,59 @@
 
 #include "./../protocol/protocol.h"
 
-#define BUF_LEN 1024
-
 // general structures
 
-typedef std::function<std::string(int, std::string)> handler;
+namespace net {
 
-// Client class
-struct ClientOption {
-    std::string server_ip;
-    int port;
-    protocol::IProtocol* proto;
+    typedef std::function<std::string(int, std::string)> RequestHandler;
+    typedef std::function<void(int)> DisconnectionHandler;
 
-    // milliseconds
-    int timeout = -1;
-};
+    struct ClientOption {
+        std::string server_ip;
+        int port;
+        protocol::IProtocol* proto;
 
-class Client {
-private:
-    int sd;
-    std::string server_ip;
-    int server_port;
-    protocol::IProtocol* proto = nullptr;
+        // milliseconds
+        int timeout = -1;
+    };
 
-public:
-    Client(ClientOption *opt);
-    ~Client();
-    entity::Error Connect();
-    entity::Response Request(std::string message);
-};
+    class Client {
+    private:
+        int sd;
+        std::string server_ip;
+        int server_port;
+        protocol::IProtocol* proto = nullptr;
 
-struct ServerOption {
-    int port;
-    protocol::IProtocol* proto = nullptr;
-};
+    public:
+        Client(ClientOption *opt) noexcept;
+        ~Client() noexcept;
+        entity::Error Connect() noexcept;
+        std::pair<std::string,entity::Error> Request(std::string message) noexcept;
+    };
 
-// Server class
-class Server {
-private:
-    int listener;
-    int port;
-    protocol::IProtocol* proto;
-    handler callback;
-public:
-    Server(ServerOption *opt) noexcept;
-    ~Server();
-    void Listen();
-    void SetHandler(handler callback);
-private:
-    int acceptNewConnection(fd_set *master);
-};
+    struct ServerOption {
+        int port;
+        protocol::IProtocol* proto = nullptr;
+    };
+
+    // Server class
+    class Server {
+    private:
+        int listener;
+        int port;
+        bool stop = false;
+        protocol::IProtocol* proto;
+        RequestHandler message_callback;
+        DisconnectionHandler disconnection_callback;
+    public:
+        Server(ServerOption *opt) noexcept;
+        ~Server() noexcept;
+        void Listen() noexcept;
+        void Stop() noexcept;
+        void SetRequestHandler(RequestHandler callback) noexcept;
+        void SetDisconnectionHandler(DisconnectionHandler callback) noexcept;
+    private:
+        int acceptNewConnection(fd_set *master) noexcept;
+        void disconnect(fd_set *master, int sd) noexcept;
+    };
+}
