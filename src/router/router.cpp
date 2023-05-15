@@ -36,7 +36,7 @@ std::string Login(router::Context *ctx){
         );
     }
 
-    std::cout << res->username  << " connected ";  
+    std::cout << "[server] " << res->username <<  " disconnnected" << std::endl;
     // add user to the map of logged in users
     users[ctx->connectionID] = res; 
 
@@ -120,7 +120,7 @@ void router::Disconnect(int sd){
         return;
     }
 
-    std::cout << it->second->username  << " disconnected" << std::endl;  
+    std::cout << "[server] " << it->second->username <<  " disconnnected" << std::endl;
 
     // TODO use smart pointers
     // remove the user from the heap
