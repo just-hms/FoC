@@ -7,11 +7,13 @@
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/dh.h>
+#include <openssl/hmac.h>
 #include <openssl/rand.h>
 #include <openssl/pem.h>
 
 #define SYMMLEN 256
 #define SALT_LEN 16
+#define HMAC_KEY_LEN 16
 #define PUBK "pubk.pem"
 #define PRIVK "privk.pem"
 
@@ -70,8 +72,21 @@ class SymCrypt {
 // RSAGEN
 void generateRSAkeys(std::string, std::string, unsigned int);
 
+class Hmac {
+    unsigned char key[16];
+
+    public:
+        Hmac();
+        Hmac(std::string);
+        std::string MAC(std::string);
+};
 
 // PASSWORD
+
 std::string Hash(std::string);
 std::string HashAndSalt(std::string, std::string);
 bool VerifyHash(std::string, std::string);
+
+//ENCODING
+
+std::string encode(char*, int);

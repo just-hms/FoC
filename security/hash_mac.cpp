@@ -3,6 +3,7 @@ using namespace std;
 
 int hash_len = EVP_MD_size(EVP_sha3_512());
 
+//given a buffer and its length, returns a hex string of the contents of such buffer
 string encode(char *s, int len) {
     ostringstream oss;
     for (unsigned int i = 0; i < len; i++) {
@@ -11,17 +12,48 @@ string encode(char *s, int len) {
     return oss.str();
 }
 
-int decode(const string &s) {
-    return strtoul(s.c_str(), NULL, 16);
+//creates the key from scatch
+Hmac::Hmac() {
+    RAND_bytes(this->key, sizeof(this->key));
 }
 
-string Hash(string m) {
+//initialize a Hmac object with specified key, if the key is too short then it's increased in size
+Hmac::Hmac(string key) {
+    unsigned char *c;
+    string tmp = key;
+
+    if(key.size() < HMAC_KEY_LEN) {
+        int rem = HMAC_KEY_LEN - key.size(), i = 0;
+        c = new unsigned char[rem];
+        RAND_bytes(c, rem);
+        tmp.append(string((char*)c));
+    }
+
+    memcpy(this->key, (unsigned char*) tmp.c_str(), HMAC_KEY_LEN);
+}
+
+//builds and returns a MAC in hex string form
+string Hmac::MAC(string data) {
+    unsigned char *buffer = new unsigned char[EVP_MD_size(EVP_sha3_512())];
+    unsigned int len;
+    
+    HMAC_CTX *ctx = HMAC_CTX_new();
+    HMAC_Init(ctx, this->key, sizeof(this->key), EVP_sha3_512());
+    HMAC_Update(ctx, (unsigned char*) data.c_str(), data.size());
+    HMAC_Final(ctx, buffer, &len);
+    HMAC_CTX_free(ctx);
+
+    return encode((char*) buffer, len);
+}
+
+//hashes data using EVP_sha3_512, returns a hex string
+string Hash(string data) {
     unsigned int buflen;
     char *buf = new char[hash_len];
 
     EVP_MD_CTX *ctx = EVP_MD_CTX_new();
     EVP_DigestInit(ctx, EVP_sha3_512());
-    EVP_DigestUpdate(ctx, (unsigned char*)m.c_str(), m.size());
+    EVP_DigestUpdate(ctx, (unsigned char*)data.c_str(), data.size());
     EVP_DigestFinal(ctx, (unsigned char*)buf, &buflen);
     EVP_MD_CTX_free(ctx);
 
