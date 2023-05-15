@@ -21,92 +21,132 @@ int pem_password_callback(char *buf, int max_len, int flag, void *udata) {
 }
 
 //encrypts mes using userID's public key
-ciphertext AsymCrypt::encrypt(unsigned char* mess) {
+vector<uint8_t> AsymCrypt::encrypt(vector<uint8_t> mess) {
     EVP_PKEY_CTX *ctx;
     EVP_PKEY *key;
-    ciphertext c;
-    size_t inlen = strlen((char*)mess), ctlen;
-    unsigned char *ct;
+    size_t ctlen;
+    vector<uint8_t> ct;
 
     FILE *fp = fopen((this->pubk).c_str(), "r");
+    if(fp == NULL) {
+        cerr<<"Couldn't open AsymCrypt private key file"<<endl;
+        return {};
+    }
     key = PEM_read_PUBKEY(fp, NULL, NULL, NULL);
+    if(key == NULL) {
+        cerr<<"Couldn't read AsymCrypt public key"<<endl;
+        fclose(fp);
+        return {};
+    }
     fclose(fp);
 
-    ctx = EVP_PKEY_CTX_new(key, NULL);
-    if (!ctx) {
-        cerr<<"Unable to create a context for RSA"<<endl;
-        return c;
+    if(!(ctx = EVP_PKEY_CTX_new(key, NULL))) {
+        cerr<<"Unable to create a contextfor AsymCrypt"<<endl;
+        EVP_PKEY_free(key);
+        return {};
     }
-    EVP_PKEY_encrypt_init(ctx);
-    EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
+
+    if(EVP_PKEY_encrypt_init(ctx) <= 0) {
+        cerr<<"Unable to initialize context for AsymCrypt"<<endl;
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(key);
+        return {};
+    }
+
+    if(EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
+        cerr<<"Unable to set padding for AsymCrypt"<<endl;
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(key);
+        return {};
+    }
 
     //determine output buffer length
-    if(EVP_PKEY_encrypt(ctx, NULL, &ctlen, mess, inlen) <= 0) {
-        cout<<"Unable to determine ct buffer lenght"<<endl;
+    if(EVP_PKEY_encrypt(ctx, NULL, &ctlen, mess.data(), mess.size()) <= 0) {
+        cout<<"Unable to determine ct buffer length"<<endl;
         EVP_PKEY_CTX_free(ctx);
         EVP_PKEY_free(key);
-        return c;
+        return {};
     }
-    ct = new unsigned char[ctlen];
+    ct.resize(ctlen);
 
-    if(EVP_PKEY_encrypt(ctx, ct, &ctlen, mess, inlen) == -1) {
-        cerr<<"Error during encryption"<<endl;
-        delete[] ct;
+    if(EVP_PKEY_encrypt(ctx, ct.data(), &ctlen, mess.data(), mess.size()) <= 0) {
+        cerr<<"Error during AsymCrypt encryption"<<endl;
         EVP_PKEY_CTX_free(ctx);
         EVP_PKEY_free(key);
-        return c;
+        return {};
     }
 
     EVP_PKEY_CTX_free(ctx);
     EVP_PKEY_free(key);
 
-    c.body = ct;
-    c.len = ctlen;
-    return c;
+    return ct;
 }
 
 //decrypts mess using the server's private key
-string AsymCrypt::decrypt(ciphertext ct) {
+vector<uint8_t> AsymCrypt::decrypt(vector<uint8_t> ct) {
     EVP_PKEY_CTX *ctx;
+    EVP_PKEY *key;
+    size_t ptlen;
+    vector<uint8_t> pt;
+
     FILE *fp = fopen((this->privk).c_str(), "r");
     if(fp == NULL) {
-        cerr<<"Couldn't open private key file"<<endl;
-        return NULL;
+        cerr<<"Couldn't open AsymCrypt private key file"<<endl;
+        return {};
     }
-    EVP_PKEY *key = PEM_read_PrivateKey(fp, NULL, pem_password_callback, (void*)this->privk_pwd.c_str());
+    key = PEM_read_PrivateKey(fp, NULL, pem_password_callback, (void*)this->privk_pwd.c_str());
+    if(key == NULL) {
+        cerr<<"Couldn't read AsymCrypt private key"<<endl;
+        fclose(fp);
+        return {};
+    }
     fclose(fp);
-    size_t ptlen;
-    unsigned char* pt;
 
-    ctx = EVP_PKEY_CTX_new(key, NULL);
-    if (!ctx) {
-        cerr<<"Unable to create a context for RSA"<<endl;
-        return "";
+    if(!(ctx = EVP_PKEY_CTX_new(key, NULL))) {
+        cerr<<"Unable to create a context for AsymCrypt"<<endl;
+        EVP_PKEY_free(key);
+        return {};
     }
 
-    EVP_PKEY_decrypt_init(ctx);
-    EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
+    if(EVP_PKEY_decrypt_init(ctx) <= 0) {
+        cerr<<"Unable to initialize context for AsymCrypt"<<endl;
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(key);
+        return {};
+    }
 
-    if(EVP_PKEY_decrypt(ctx, NULL, &ptlen, ct.body, ct.len) <= 0) {
+    if(EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
+        cerr<<"Unable to set padding for AsymCrypt"<<endl;
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(key);
+        return {};
+    }
+    if(EVP_PKEY_decrypt(ctx, NULL, &ptlen, ct.data(), ct.size()) <= 0) {
         cerr<<"Unable to determine pt buffer length"<<endl;
         EVP_PKEY_CTX_free(ctx);
         EVP_PKEY_free(key);
-        return "";
+        return {};
     }
-    pt = new unsigned char[ptlen];
+    pt.resize(ptlen);
 
-    if(EVP_PKEY_decrypt(ctx, pt, &ptlen, ct.body, ct.len) <= 0) {
-        cerr<<"Error during decryption"<<endl;
-        delete[] pt;
+    if(EVP_PKEY_decrypt(ctx, pt.data(), &ptlen, ct.data(), ct.size()) < 0) {
+        cerr<<"Error during AsymCrypt decryption"<<endl;
         EVP_PKEY_CTX_free(ctx);
         EVP_PKEY_free(key);
-        return "";
+        return {};
     }
 
     EVP_PKEY_CTX_free(ctx);
     EVP_PKEY_free(key);
 
-    return string((char*) pt);
+    for(int i = 0; i < pt.size(); i++) {
+        if(pt[i] == '\0') {
+            pt.resize(i);
+            break;
+        }
+    }
+
+    return pt;
 }
 
 AsymCrypt::~AsymCrypt() {;}

@@ -18,13 +18,6 @@
 #define PRIVK "privk.pem"
 
 // ASYMCRYPT
-struct ciphertext {
-    unsigned char *body;
-    size_t len = 0;
-
-} typedef ciphertext;
-
-
 /*EXAMPLE
 AsymCrypt a(private_key_cb, load_public_keys("./clients/"));
 ciphertext c = a.encrypt((unsigned char*)"Lorem ipsum dolor sit amet\n", 0);
@@ -40,8 +33,8 @@ class AsymCrypt {
 
     public:
         AsymCrypt(std::string, std::string, std::string);
-        ciphertext encrypt(unsigned char*);
-        std::string decrypt(ciphertext);
+        std::vector<uint8_t> encrypt(std::vector<uint8_t>);
+        std::vector<uint8_t> decrypt(std::vector<uint8_t>);
         ~AsymCrypt();
 };
 
@@ -64,13 +57,13 @@ class SymCrypt {
     public:
         SymCrypt(sessionKey);
         void refresh(sessionKey);
-        unsigned char* encrypt(unsigned char*);
-        unsigned char* decrypt(unsigned char*);
+        std::vector<uint8_t> encrypt(std::vector<uint8_t>);
+        std::vector<uint8_t> decrypt(std::vector<uint8_t>);
         ~SymCrypt();
 };
 
 // RSAGEN
-void generateRSAkeys(std::string, std::string, unsigned int);
+int generateRSAkeys(std::string, std::string, unsigned int);
 
 class Hmac {
     unsigned char key[16];

@@ -36,28 +36,66 @@ Hmac::Hmac(string key) {
 string Hmac::MAC(string data) {
     unsigned char *buffer = new unsigned char[EVP_MD_size(EVP_sha3_512())];
     unsigned int len;
+    HMAC_CTX *ctx;
     
-    HMAC_CTX *ctx = HMAC_CTX_new();
-    HMAC_Init(ctx, this->key, sizeof(this->key), EVP_sha3_512());
-    HMAC_Update(ctx, (unsigned char*) data.c_str(), data.size());
-    HMAC_Final(ctx, buffer, &len);
+    if(!(ctx = HMAC_CTX_new())) {
+        cerr<<"Unable to create context for HMAC"<<endl;
+        return "";
+    }
+    if(HMAC_Init(ctx, this->key, sizeof(this->key), EVP_sha3_512()) <= 0) {
+        cerr<<"Unable to initialize context for HMAC"<<endl;
+        HMAC_CTX_free(ctx);
+        return "";
+    }
+    if(HMAC_Update(ctx, (unsigned char*) data.c_str(), data.size()) <= 0) {
+        cerr<<"Unable to compute HMAC"<<endl;
+        HMAC_CTX_free(ctx);
+        return "";
+    }
+    if(HMAC_Final(ctx, buffer, &len) <= 0) {
+        cerr<<"Unable to compute HMAC"<<endl;
+        HMAC_CTX_free(ctx);
+        return "";
+    }
     HMAC_CTX_free(ctx);
 
-    return encode((char*) buffer, len);
+    string res = encode((char*) buffer, len);
+    delete[] buffer;
+
+    return res;
 }
 
 //hashes data using EVP_sha3_512, returns a hex string
 string Hash(string data) {
     unsigned int buflen;
     char *buf = new char[hash_len];
+    EVP_MD_CTX *ctx;
 
-    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-    EVP_DigestInit(ctx, EVP_sha3_512());
-    EVP_DigestUpdate(ctx, (unsigned char*)data.c_str(), data.size());
-    EVP_DigestFinal(ctx, (unsigned char*)buf, &buflen);
+    if(!(ctx = EVP_MD_CTX_new())) {
+        cerr<<"Unable to create context for Hash"<<endl;
+        return "";
+    }
+    if(EVP_DigestInit(ctx, EVP_sha3_512()) <= 0) {
+        cerr<<"Unable to initialize context for Hash"<<endl;
+        EVP_MD_CTX_free(ctx);
+        return "";
+    }
+    if(EVP_DigestUpdate(ctx, (unsigned char*)data.c_str(), data.size()) <= 0) {
+        cerr<<"Unable to compute Hash"<<endl;
+        EVP_MD_CTX_free(ctx);
+        return "";
+    }
+    if(EVP_DigestFinal(ctx, (unsigned char*)buf, &buflen) <= 0) {
+        cerr<<"Unable to compute Hash"<<endl;
+        EVP_MD_CTX_free(ctx);
+        return "";
+    }
     EVP_MD_CTX_free(ctx);
 
-    return encode(buf, hash_len);
+    string res = encode(buf, hash_len);
+    delete[] buf;
+
+    return res;
 }
 
 //takes in input a password and salt
