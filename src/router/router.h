@@ -16,10 +16,10 @@
 namespace router {
 
     typedef int reqstatus;
-    #define STATUS_OK              reqstatus(200)
-    #define STATUS_BAD_REQUEST     reqstatus(400)
-    #define STATUS_NOT_FOUND       reqstatus(404)
-    #define STATUS_UNAUTHORIZED    reqstatus(401)
+    constexpr reqstatus STATUS_OK = 200;
+    constexpr reqstatus STATUS_BAD_REQUEST = 400;
+    constexpr reqstatus STATUS_NOT_FOUND = 404;
+    constexpr reqstatus STATUS_UNAUTHORIZED = 401;
 
     struct Context{
         std::shared_ptr<entity::User> user;

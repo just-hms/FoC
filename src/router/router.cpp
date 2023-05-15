@@ -137,6 +137,8 @@ std::string router::Handle(int sd, std::string message){
 
     // extract the user from the map
     auto it = users.find(sd);
+
+    // if exists set it
     if (it != users.end()){
         us = it->second;
     }

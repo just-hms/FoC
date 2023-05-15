@@ -3,8 +3,6 @@
 
 #include "./../protocol/protocol.h"
 
-#define BUF_LEN 1024
-
 // general structures
 
 namespace net {
