@@ -46,7 +46,7 @@ namespace sec {
     // SYMCRYPT
     //stores key and iv for AES cipher
     struct sessionKey {
-        unsigned char key[SYMMLEN/8], iv[SYMMLEN/8];
+        unsigned char key[SYMMLEN/8], iv[16];
     } typedef sessionKey;
 
 
@@ -70,7 +70,7 @@ namespace sec {
     int genDHparam(EVP_PKEY*&);
     int genDH(EVP_PKEY*&, EVP_PKEY*);
     std::vector<uint8_t> derivateDH(EVP_PKEY*, EVP_PKEY*);
-    sessionKey keyFromSecret(std::string);
+    sessionKey keyFromSecret(std::vector<uint8_t> secret);
 
     class Hmac {
         unsigned char key[16];

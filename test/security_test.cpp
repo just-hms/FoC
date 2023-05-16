@@ -23,12 +23,25 @@ int TestDH(){
 
     ASSERT_TRUE(lvector == rvector);
 
-    auto key = sec::keyFromSecret(std::string(lvector.begin(), lvector.end()));
+    auto k1 = sec::keyFromSecret(lvector);
+    auto k2 = sec::keyFromSecret(rvector);
+    std::vector<uint8_t> tmp1(32), tmp2(16), tmp3(32), tmp4(16);
 
-    sec::SymCrypt R(key);
+    //  :-)
+
+    memcpy(tmp1.data(), k1.key, 32);
+     memcpy(tmp2.data(), k1.iv, 16);
+      memcpy(tmp3.data(), k2.key, 32);
+       memcpy(tmp4.data(), k2.iv, 16);
+
+        // :-)
+
+    ASSERT_TRUE((tmp1 == tmp3) && (tmp2 == tmp4));
+
+    sec::SymCrypt R(k1);
 
     auto res = R.decrypt(
-        R.encrypt( mess)       
+        R.encrypt(mess)       
     );
 
     ASSERT_TRUE(mess == res);

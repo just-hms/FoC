@@ -28,7 +28,7 @@ sec::Hmac::Hmac(std::vector<uint8_t> key) {
 
 //builds and returns a MAC in hex string form
 std::vector<uint8_t> sec::Hmac::MAC(std::vector<uint8_t> data) {
-    std::vector<uint8_t>buffer(EVP_MD_size(EVP_sha3_512()));
+    std::vector<uint8_t>res(EVP_MD_size(EVP_sha3_512()));
     unsigned int len;
     HMAC_CTX *ctx;
     
@@ -46,14 +46,16 @@ std::vector<uint8_t> sec::Hmac::MAC(std::vector<uint8_t> data) {
         HMAC_CTX_free(ctx);
         return {};
     }
-    if(HMAC_Final(ctx, buffer.data(), &len) <= 0) {
+    if(HMAC_Final(ctx, res.data(), &len) <= 0) {
         std::cerr<<"Unable to compute HMAC"<<std::endl;
         HMAC_CTX_free(ctx);
         return {};
     }
     HMAC_CTX_free(ctx);
 
-    return buffer;
+    res.resize(len);
+
+    return res;
 }
 
 //hashes data using EVP_sha3_512, returns a hex string

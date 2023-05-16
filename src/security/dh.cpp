@@ -135,11 +135,14 @@ std::vector<uint8_t> sec::derivateDH(EVP_PKEY *privk, EVP_PKEY *peerk) {
     return secret;
 }
 
-sec::sessionKey sec::keyFromSecret(std::string secret) {
+sec::sessionKey sec::keyFromSecret(std::vector<uint8_t> secret) {
+
     sessionKey k;
-    auto result = sec::Hash(std::string(secret.begin(), secret.begin()));
+
+    auto result = sec::Hash(std::string(secret.begin(), secret.end()));
     auto reskey = result.substr(0, SYMMLEN/8);
     auto resiv = result.substr(SYMMLEN/8, 16);
+
     memcpy(&k.key[0], reskey.data(), SYMMLEN/8);
     memcpy(&k.iv[0], resiv.data(), 16);
 
