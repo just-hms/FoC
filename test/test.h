@@ -41,3 +41,4 @@ int TestAES();
 int TestHash();
 int TestHashAndSalt();
 int TestMAC();
+int TestEncodeEVP_PKEY();

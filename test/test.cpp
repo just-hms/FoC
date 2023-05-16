@@ -10,5 +10,6 @@ int main(){
     TestHash()          ||
     TestHashAndSalt()   ||
     TestMAC()           ||
+    TestEncodeEVP_PKEY()||
     0;
 }
