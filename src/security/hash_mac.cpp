@@ -17,51 +17,43 @@ sec::Hmac::Hmac() {
 }
 
 //initialize a Hmac object with specified key, if the key is too short then it's increased in size
-sec::Hmac::Hmac(std::string key) {
-    unsigned char *c;
-    std::string tmp = key;
-
+sec::Hmac::Hmac(std::vector<uint8_t> key) {
     if(key.size() < HMAC_KEY_LEN) {
-        int rem = HMAC_KEY_LEN - key.size(), i = 0;
-        c = new unsigned char[rem];
-        RAND_bytes(c, rem);
-        tmp.append(std::string((char*)c));
+        std::cerr<<"Key for HMAC is too short"<<std::endl;
+        exit(-1);
     }
 
-    memcpy(this->key, (unsigned char*) tmp.c_str(), HMAC_KEY_LEN);
+    memcpy(this->key, key.data(), HMAC_KEY_LEN);
 }
 
 //builds and returns a MAC in hex string form
-std::string sec::Hmac::MAC(std::string data) {
-    unsigned char *buffer = new unsigned char[EVP_MD_size(EVP_sha3_512())];
+std::vector<uint8_t> sec::Hmac::MAC(std::vector<uint8_t> data) {
+    std::vector<uint8_t>buffer(EVP_MD_size(EVP_sha3_512()));
     unsigned int len;
     HMAC_CTX *ctx;
     
     if(!(ctx = HMAC_CTX_new())) {
         std::cerr<<"Unable to create context for HMAC"<<std::endl;
-        return "";
+        return {};
     }
     if(HMAC_Init(ctx, this->key, sizeof(this->key), EVP_sha3_512()) <= 0) {
         std::cerr<<"Unable to initialize context for HMAC"<<std::endl;
         HMAC_CTX_free(ctx);
-        return "";
+        return {};
     }
-    if(HMAC_Update(ctx, (unsigned char*) data.c_str(), data.size()) <= 0) {
+    if(HMAC_Update(ctx, data.data(), data.size()) <= 0) {
         std::cerr<<"Unable to compute HMAC"<<std::endl;
         HMAC_CTX_free(ctx);
-        return "";
+        return {};
     }
-    if(HMAC_Final(ctx, buffer, &len) <= 0) {
+    if(HMAC_Final(ctx, buffer.data(), &len) <= 0) {
         std::cerr<<"Unable to compute HMAC"<<std::endl;
         HMAC_CTX_free(ctx);
-        return "";
+        return {};
     }
     HMAC_CTX_free(ctx);
 
-    std::string res = sec::encode((char*) buffer, len);
-    delete[] buffer;
-
-    return res;
+    return buffer;
 }
 
 //hashes data using EVP_sha3_512, returns a hex string

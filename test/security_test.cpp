@@ -114,8 +114,18 @@ int TestHashAndSalt(){
 int TestMAC() {
     std::string mess = "message";
 
-    sec::Hmac h("");
-    ASSERT_TRUE(h.MAC(mess) == h.MAC(mess));
+    sec::Hmac h;
+    ASSERT_TRUE(h.MAC(std::vector<uint8_t>(mess.begin(), mess.end())) == h.MAC(std::vector<uint8_t>(mess.begin(), mess.end())));
 
     TEST_PASSED();
+}
+int main(){
+    return 
+    TestDH()            ||
+    TestRSA()           ||
+    TestAES()           ||
+    TestHash()          ||
+    TestHashAndSalt()   ||
+    TestMAC()           ||
+    0;
 }

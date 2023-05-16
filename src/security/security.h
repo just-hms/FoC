@@ -82,14 +82,14 @@ namespace sec {
 
         public:
             Hmac();
-            Hmac(std::string);
-            std::string MAC(std::string);
+            Hmac(std::vector<uint8_t>);
+            std::vector<uint8_t> MAC(std::vector<uint8_t>);
     };
 
     // PASSWORD
-    std::string Hash(std::string data);
-    std::string HashAndSalt(std::string password, std::string salt= "");
-    bool VerifyHash(std::string hashed, std::string data);
+    std::string Hash(std::string);
+    std::string HashAndSalt(std::string password, std::string salt = "");
+    bool VerifyHash(std::string, std::string);
 
     //ENCODING
     std::string encode(char*, int);

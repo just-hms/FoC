@@ -1,6 +1,5 @@
 #include "security.h"
 
-
 // Encode the public key as a string
 std::string encodePublicKey(EVP_PKEY* publicKey) {
     BIO* bio = BIO_new(BIO_s_mem());
