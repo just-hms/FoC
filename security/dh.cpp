@@ -134,3 +134,14 @@ vector<uint8_t> derivateDH(EVP_PKEY *privk, EVP_PKEY *peerk) {
 
     return secret;
 }
+
+sessionKey keyFromSecret(string secret) {
+    sessionKey k;
+    string result = Hash(string(secret.begin(), secret.begin()));
+    string reskey = result.substr(0, SYMMLEN/8);
+    string resiv = result.substr(SYMMLEN/8, 16);
+    memcpy(&k.key[0], reskey.data(), SYMMLEN/8);
+    memcpy(&k.iv[0], resiv.data(), 16);
+
+    return k;
+}

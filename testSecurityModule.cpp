@@ -24,9 +24,19 @@ int main() {
         cout<<"FAILED"<<endl;
         return -1;
     }
+    auto secret = derivateDH(sdh, cdh);
+    SymCrypt R(keyFromSecret(string(secret.begin(), secret.end())));
+    auto culo = R.decrypt(R.encrypt(vector<uint8_t>(mess1.begin(), mess1.end())));
+    auto chiappe = string(culo.begin(), culo.end());
+    if(Hash(chiappe) != Hash(mess1)) {
+        cout<<"FAILED"<<endl;
+        return -1;
+    }
+
     EVP_PKEY_free(p);
     EVP_PKEY_free(sdh);
     EVP_PKEY_free(cdh);
+
     cout<<"PASSED"<<endl<<endl;
 
     cout<<"RSA generation test: ";

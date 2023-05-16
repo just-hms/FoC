@@ -69,6 +69,7 @@ int generateRSAkeys(std::string, std::string, unsigned int);
 int genDHparam(EVP_PKEY*&);
 int genDH(EVP_PKEY*&, EVP_PKEY*);
 std::vector<uint8_t> derivateDH(EVP_PKEY*, EVP_PKEY*);
+sessionKey keyFromSecret(std::string);
 
 //HMAC
 class Hmac {
