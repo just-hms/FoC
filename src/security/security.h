@@ -37,10 +37,9 @@ namespace sec {
         std::string privk_pwd;
 
         public:
-            AsymCrypt(std::string, std::string, std::string);
-            std::vector<uint8_t> encrypt(std::vector<uint8_t>);
-            std::vector<uint8_t> decrypt(std::vector<uint8_t>);
-            ~AsymCrypt();
+            AsymCrypt(std::string path_private_key, std::string path_public_key_peer, std::string password);
+            std::vector<uint8_t> encrypt(std::vector<uint8_t> plaintext);
+            std::vector<uint8_t> decrypt(std::vector<uint8_t> ciphertext);
     };
 
 
@@ -60,39 +59,36 @@ namespace sec {
         sessionKey key;
 
         public:
-            SymCrypt(sessionKey);
-            void refresh(sessionKey);
-            std::vector<uint8_t> encrypt(std::vector<uint8_t>);
-            std::vector<uint8_t> decrypt(std::vector<uint8_t>);
-            ~SymCrypt();
+            SymCrypt(sessionKey sessionKey);
+            void refresh(sessionKey newSessionKey);
+            std::vector<uint8_t> encrypt(std::vector<uint8_t> plaintext);
+            std::vector<uint8_t> decrypt(std::vector<uint8_t> ciphertext);
     };
+    
+    int generateRSAkeys(std::string path, std::string password, unsigned int bits);
 
-    // RSAGEN
-    int generateRSAkeys(std::string, std::string, unsigned int);
-
-    //DH
     int genDHparam(EVP_PKEY*&);
     int genDH(EVP_PKEY*&, EVP_PKEY*);
     std::vector<uint8_t> derivateDH(EVP_PKEY*, EVP_PKEY*);
     sessionKey keyFromSecret(std::string);
 
-    //HMAC
     class Hmac {
         unsigned char key[16];
 
         public:
             Hmac();
-            Hmac(std::vector<uint8_t>);
-            std::vector<uint8_t> MAC(std::vector<uint8_t>);
+            Hmac(std::vector<uint8_t> key);
+            std::vector<uint8_t> MAC(std::vector<uint8_t> data);
     };
 
-    // PASSWORD
-    std::string Hash(std::string);
+    std::string Hash(std::string data);
     std::string HashAndSalt(std::string password, std::string salt = "");
-    bool VerifyHash(std::string, std::string);
+    bool VerifyHash(std::string hashAndSalt, std::string password);
 
-    //ENCODING
-    std::string encode(char*, int);
+    std::string encode(char* data, int datalen);
+    std::vector<uint8_t>encodePublicKey(EVP_PKEY *keyToEncode);
+    EVP_PKEY* decodePublicKey(std::vector<uint8_t> encodedKey);
+
 }
 
 #endif

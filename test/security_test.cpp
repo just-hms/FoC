@@ -53,7 +53,6 @@ int TestRSA(){
     sec::AsymCrypt AS(DATA_PATH + "serverprivk.pem", DATA_PATH + "clientpubk.pem", "sercret_server");
     sec::AsymCrypt AC(DATA_PATH + "clientprivk.pem", DATA_PATH + "serverpubk.pem", "sercret_client");
 
-
     // one way
     auto res = AC.decrypt(
         AS.encrypt(mess)
@@ -61,7 +60,6 @@ int TestRSA(){
     ASSERT_TRUE(mess == res);
 
     // the other  way
-
     res = AS.decrypt(
         AC.encrypt(mess)
     );
@@ -119,6 +117,15 @@ int TestMAC() {
 
     TEST_PASSED();
 }
+
+int TestEncodeEVP_PKEY() {
+    EVP_PKEY *key = EVP_RSA_gen(1024);
+
+    ASSERT_TRUE(sec::encodePublicKey(sec::decodePublicKey(sec::encodePublicKey(key))) == sec::encodePublicKey(key));
+
+    TEST_PASSED();
+}
+
 int main(){
     return 
     TestDH()            ||
@@ -127,5 +134,6 @@ int main(){
     TestHash()          ||
     TestHashAndSalt()   ||
     TestMAC()           ||
+    TestEncodeEVP_PKEY()||
     0;
 }

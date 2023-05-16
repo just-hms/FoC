@@ -1,33 +1,34 @@
 #include "security.h"
 
 // Encode the public key as a string
-std::string encodePublicKey(EVP_PKEY* publicKey) {
+std::vector<uint8_t> sec::encodePublicKey(EVP_PKEY* publicKey) {
+
     BIO* bio = BIO_new(BIO_s_mem());
+    std::vector<uint8_t>res;
     if(bio == NULL) {
         std::cerr<<"Couldn't allocate BIO structure"<<std::endl;
         BIO_free(bio);
-        return "";
+        return {};
     }
     if(PEM_write_bio_PUBKEY(bio, publicKey) <= 0) {
         std::cerr<<"Couldn't write public key"<<std::endl;
         BIO_free(bio);
-        return "";
+        return {};
     }
-    
-    char* buffer;
-    long length = BIO_get_mem_data(bio, &buffer);
-    
-    std::string encodedKey(buffer, length);
+    char *buffer;
+    res.resize(BIO_get_mem_data(bio, &buffer));
+    memcpy(res.data(), buffer, res.size());
+    delete buffer;
     
     BIO_free(bio);
-    return encodedKey;
+    return res;
 }
 
-EVP_PKEY* decodePublicKey(const std::string& encodedKey) {
+EVP_PKEY* sec::decodePublicKey(std::vector<uint8_t> encodedKey) {
+    
     BIO* bio;
     EVP_PKEY* publicKey;
-
-    bio = BIO_new_mem_buf(encodedKey.c_str(), -1);
+    bio = BIO_new_mem_buf(encodedKey.data(), encodedKey.size());
     if(!(publicKey = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL))) {
         std::cerr<<"Couldn't read public key"<<std::endl;
         BIO_free(bio);

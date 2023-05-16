@@ -147,5 +147,3 @@ std::vector<uint8_t> sec::AsymCrypt::decrypt(std::vector<uint8_t> ct) {
 
     return pt;
 }
-
-sec::AsymCrypt::~AsymCrypt() {;}

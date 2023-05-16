@@ -93,5 +93,3 @@ std::vector<uint8_t> sec::SymCrypt::decrypt(std::vector<uint8_t> ct) {
 
     return pt;
 }
-
-sec::SymCrypt::~SymCrypt() {;}
