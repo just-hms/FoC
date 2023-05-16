@@ -1,8 +1,5 @@
 #include "router.h"
 
-// map of currently logged users SD -> entity:User
-std::unordered_map<int, std::shared_ptr<entity::User>> users;
-
 Json::Value ExitWithJSON(int status, std::string message=""){
     Json::StreamWriterBuilder builder;
     Json::Value out;
@@ -34,7 +31,7 @@ Json::Value router::Router::Login(router::Context *ctx){
     }
 
     // add user to the map of logged in users
-    users[ctx->connectionID] = res; 
+    this->users[ctx->connectionID] = res; 
 
     return ExitWithJSON(router::STATUS_OK);
 }
@@ -107,14 +104,14 @@ Json::Value router::Router::History(router::Context *ctx){
 
 
 void router::Router::Disconnect(int sd){
-    auto it = users.find(sd);
-    if (it == users.end()){
+    auto it = this->users.find(sd);
+    if (it == this->users.end()){
         return;
     }
 
     std::string route = "logout";
     std::cout << "/" << route <<  std::string(10 - route.length(), ' ' ) << 201 << std::endl; 
-    users.erase(sd);
+    this->users.erase(sd);
 }
 
 
@@ -126,10 +123,10 @@ std::string router::Router::Handle(int sd, std::string message){
     std::shared_ptr<entity::User> us = nullptr;
 
     // extract the user from the map
-    auto it = users.find(sd);
+    auto it = this->users.find(sd);
 
     // if exists set it
-    if (it != users.end()){
+    if (it != this->users.end()){
         us = it->second;
     }
 

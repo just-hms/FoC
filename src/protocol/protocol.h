@@ -4,10 +4,12 @@
 #include <string>
 #include <span>
 #include <tuple>
+#include <unordered_map>
 
 #include "./../entity/entity.h"
 #include "./../security/security.h"
 #include "./../network/network.h"
+#include "time.h"
 
 
 namespace protocol {
@@ -27,23 +29,25 @@ namespace protocol {
         std::string username;
     };
 
-    // FunkyProtocol implements the IProtocol sending encrypted data
-    class FunkyProtocol : public net::IProtocol {
-    private:
-
-        // TODO put all of this in a map
-        bool InSession;
-        std::string username;
-        
+    struct FunkySecuritySuite {
+        // std::string username;
         sec::SymCrypt sym;
         sec::Hmac mac;
         sec::AsymCrypt asy;
+    };
+
+    // FunkyProtocol implements the IProtocol sending encrypted data
+    class FunkyProtocol : public net::IProtocol {
+    private:    
+
+        std::unordered_map<int, std::shared_ptr<FunkySecuritySuite>> sessions;
         
         // lazy handshakes
         //  - this function are called silently inside the Send and Receive
         //  - the handshake starts if no sessions_key is currently available
-        std::tuple<sec::sessionKey,entity::Error> LeftHandshake(int sd);
-        std::tuple<sec::sessionKey,entity::Error> RightHandshake(int sd);
+        std::tuple<std::shared_ptr<FunkySecuritySuite>,entity::Error> LeftHandshake(int sd);
+        std::tuple<std::shared_ptr<FunkySecuritySuite>,entity::Error> RightHandshake(int sd);
+
     public:
         // TODO: edit constructor to accept cfg
         ~FunkyProtocol() {}

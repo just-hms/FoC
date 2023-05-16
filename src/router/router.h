@@ -43,7 +43,13 @@ namespace router {
 
     class Router : public net::IRouter{
     private:
+        // map of currently logged users SD -> entity:User
+        std::unordered_map<int, std::shared_ptr<entity::User>> users;
+
+        // repository
         IRepo* repo;
+
+        // handlers
         Json::Value Login(Context *ctx);
         Json::Value Balance(Context *ctx);
         Json::Value Transfer(Context *ctx);
