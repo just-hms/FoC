@@ -83,7 +83,7 @@ class Hmac {
 
 // PASSWORD
 std::string Hash(std::string);
-std::string HashAndSalt(std::string, std::string);
+std::string HashAndSalt(std::string, std::string = "");
 bool VerifyHash(std::string, std::string);
 
 //ENCODING

@@ -36,7 +36,7 @@ int TestRawPingPong() {
     // connnect the client
     
     c.Connect();
-    auto res = c.Request("ping");
+    auto [res, err] = c.Request("ping");
 
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
@@ -45,8 +45,8 @@ int TestRawPingPong() {
     server_thread.join();
 
     // check the response
-    ASSERT("pong", res.first);
-    ASSERT(entity::ERR_OK, res.second);
+    ASSERT_EQUAL("pong", res);
+    ASSERT_EQUAL(entity::ERR_OK, err);
 
     TEST_PASSED();
 }

@@ -2,6 +2,13 @@
 
 int main(){
     return 
-        TestRawPingPong() || 
-        TestFunkyPingPong();
+    TestRawPingPong()   || 
+    TestFunkyPingPong() ||
+    TestDH()            ||
+    TestRSA()           ||
+    TestAES()           ||
+    TestHash()          ||
+    TestHashAndSalt()   ||
+    TestMAC()           ||
+    0;
 }
