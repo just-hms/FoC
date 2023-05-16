@@ -15,7 +15,7 @@
 // TODO: get MAX_MESSAGE_SIZE from config
 #define MAX_MESSAGE_SIZE 1024
 
-std::tuple<std::vector<uint8_t>,entity::Error> RawReceive(int sd) noexcept {
+std::tuple<std::vector<uint8_t>,entity::Error> protocol::RawReceive(int sd) noexcept {
     auto web_len = 0;
 
     auto res = recv(sd, (void*) &web_len, sizeof(size_t), 0);
@@ -50,7 +50,7 @@ std::tuple<std::vector<uint8_t>,entity::Error> RawReceive(int sd) noexcept {
     };
 }
 
-entity::Error RawSend(int sd, std::vector<uint8_t> message) noexcept {
+entity::Error protocol::RawSend(int sd, std::vector<uint8_t> message) noexcept {
 
     auto len = message.size();
 

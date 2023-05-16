@@ -1,16 +1,16 @@
 #include "security.h"
-using namespace std;
+
 
 // Encode the public key as a string
-string encodePublicKey(EVP_PKEY* publicKey) {
+std::string encodePublicKey(EVP_PKEY* publicKey) {
     BIO* bio = BIO_new(BIO_s_mem());
     if(bio == NULL) {
-        cerr<<"Couldn't allocate BIO structure"<<endl;
+        std::cerr<<"Couldn't allocate BIO structure"<<std::endl;
         BIO_free(bio);
         return "";
     }
     if(PEM_write_bio_PUBKEY(bio, publicKey) <= 0) {
-        cerr<<"Couldn't write public key"<<endl;
+        std::cerr<<"Couldn't write public key"<<std::endl;
         BIO_free(bio);
         return "";
     }
@@ -18,19 +18,19 @@ string encodePublicKey(EVP_PKEY* publicKey) {
     char* buffer;
     long length = BIO_get_mem_data(bio, &buffer);
     
-    string encodedKey(buffer, length);
+    std::string encodedKey(buffer, length);
     
     BIO_free(bio);
     return encodedKey;
 }
 
-EVP_PKEY* decodePublicKey(const string& encodedKey) {
+EVP_PKEY* decodePublicKey(const std::string& encodedKey) {
     BIO* bio;
     EVP_PKEY* publicKey;
 
     bio = BIO_new_mem_buf(encodedKey.c_str(), -1);
     if(!(publicKey = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL))) {
-        cerr<<"Couldn't read public key"<<endl;
+        std::cerr<<"Couldn't read public key"<<std::endl;
         BIO_free(bio);
         return NULL;
     }
@@ -40,22 +40,22 @@ EVP_PKEY* decodePublicKey(const string& encodedKey) {
 }
 
 //generate g and p
-int genDHparam(EVP_PKEY *&params) {
+int sec::genDHparam(EVP_PKEY *&params) {
 
     DH* tmp = DH_get_2048_256();
     if(tmp == NULL) {
-        cerr<<"Couldn't create DH"<<endl;
+        std::cerr<<"Couldn't create DH"<<std::endl;
         return -1;
     }
 
     if(!(params = EVP_PKEY_new())) {
-        cerr<<"Couldn't create DH"<<endl;
+        std::cerr<<"Couldn't create DH"<<std::endl;
         DH_free(tmp);
         return -1;
     }
 
     if(EVP_PKEY_set1_DH(params, tmp) <= 0) {
-        cerr<<"Couldn't set DH"<<endl;
+        std::cerr<<"Couldn't set DH"<<std::endl;
         DH_free(tmp);
         return -1;
     }
@@ -65,25 +65,25 @@ int genDHparam(EVP_PKEY *&params) {
     return 0;
 }
 
-int genDH(EVP_PKEY *&pubk, EVP_PKEY *params) {
+int sec::genDH(EVP_PKEY *&pubk, EVP_PKEY *params) {
 
     EVP_PKEY_CTX *ctx;
 
     //generate keys
     if(!(ctx = EVP_PKEY_CTX_new(params, NULL))) {
-        cerr<<"Couldn't create a context for DH"<<endl;
+        std::cerr<<"Couldn't create a context for DH"<<std::endl;
         return -1;
     }
 
     if(EVP_PKEY_keygen_init(ctx) <= 0) {
-        cerr<<"Couldn't initialize context for DH"<<endl;
+        std::cerr<<"Couldn't initialize context for DH"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
         return -1;
     }
 
     pubk = NULL;
     if(EVP_PKEY_keygen(ctx, &pubk) <= 0) {
-        cerr<<"Couldn't generate key for DH"<<endl;
+        std::cerr<<"Couldn't generate key for DH"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
         return -1;
     }
@@ -94,38 +94,38 @@ int genDH(EVP_PKEY *&pubk, EVP_PKEY *params) {
 
 }
 
-vector<uint8_t> derivateDH(EVP_PKEY *privk, EVP_PKEY *peerk) {
+std::vector<uint8_t> sec::derivateDH(EVP_PKEY *privk, EVP_PKEY *peerk) {
     EVP_PKEY_CTX *ctx;
-    vector<uint8_t> secret;
+    std::vector<uint8_t> secret;
     size_t secretlen;
 
     if(!(ctx = EVP_PKEY_CTX_new(privk, NULL))) {
-        cerr<<"Couldn't create a context for DH"<<endl;
+        std::cerr<<"Couldn't create a context for DH"<<std::endl;
         return {};
     }
 
     if(EVP_PKEY_derive_init(ctx) <= 0) {
-        cerr<<"Couldn't initialize deriving context for DH"<<endl;
+        std::cerr<<"Couldn't initialize deriving context for DH"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
         return {};
     }
 
     if(EVP_PKEY_derive_set_peer(ctx, peerk) <= 0) {
-        cerr<<"Couldn't set peer for DH deriving context"<<endl;
+        std::cerr<<"Couldn't set peer for DH deriving context"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
         return {};
     }
 
     //derives DH shared secret and returns it in 'secret'
     if(EVP_PKEY_derive(ctx, NULL, &secretlen) <= 0) {
-        cerr<<"Couldn't derive DH key length"<<endl;
+        std::cerr<<"Couldn't derive DH key length"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
         return {};
     }
     secret.resize(secretlen);
 
     if(EVP_PKEY_derive(ctx, secret.data(), &secretlen) <= 0) {
-        cerr<<"Couldn't derive DH key"<<endl;
+        std::cerr<<"Couldn't derive DH key"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
         return {};
     }
@@ -135,11 +135,11 @@ vector<uint8_t> derivateDH(EVP_PKEY *privk, EVP_PKEY *peerk) {
     return secret;
 }
 
-sessionKey keyFromSecret(string secret) {
+sec::sessionKey sec::keyFromSecret(std::string secret) {
     sessionKey k;
-    string result = Hash(string(secret.begin(), secret.begin()));
-    string reskey = result.substr(0, SYMMLEN/8);
-    string resiv = result.substr(SYMMLEN/8, 16);
+    auto result = sec::Hash(std::string(secret.begin(), secret.begin()));
+    auto reskey = result.substr(0, SYMMLEN/8);
+    auto resiv = result.substr(SYMMLEN/8, 16);
     memcpy(&k.key[0], reskey.data(), SYMMLEN/8);
     memcpy(&k.iv[0], resiv.data(), 16);
 

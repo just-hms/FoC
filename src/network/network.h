@@ -1,3 +1,6 @@
+#ifndef NETWORK_H
+#define NETWORK_H
+
 #include <string>
 #include <functional>
 
@@ -59,3 +62,5 @@ namespace net {
         void disconnect(fd_set *master, int sd) noexcept;
     };
 }
+
+#endif

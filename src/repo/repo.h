@@ -1,3 +1,6 @@
+#ifndef REPO_H
+#define REPO_H
+
 #include <string>
 #include <vector>
 #include "./../entity/entity.h"
@@ -9,3 +12,5 @@ namespace repo {
     bool Transfer(std::string USER_ID, std::string to, float amount);
     entity::History History(std::string USER_ID);
 }
+
+#endif

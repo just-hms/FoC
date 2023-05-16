@@ -2,13 +2,11 @@
 #include <span>
 #include <utility>
 
-using namespace protocol;
-
-FunkyProtocol::FunkyProtocol(FunkyOptions *opt){
+protocol::FunkyProtocol::FunkyProtocol(FunkyOptions *opt){
     this->username = opt->username;
 }
 
-std::tuple<std::span<uint8_t>,entity::Error> FunkyProtocol::RightHandshake(int sd){
+std::tuple<std::span<uint8_t>,entity::Error> protocol::FunkyProtocol::RightHandshake(int sd){
     // TODO implement the RightHandshake
     //  - send the username to the server
     //  - dh using RSA generated keys
@@ -16,14 +14,14 @@ std::tuple<std::span<uint8_t>,entity::Error> FunkyProtocol::RightHandshake(int s
 }
 
 
-std::tuple<std::span<uint8_t>,entity::Error> FunkyProtocol::LeftHandshake(int sd){
+std::tuple<std::span<uint8_t>,entity::Error> protocol::FunkyProtocol::LeftHandshake(int sd){
     // TODO implement the LeftHandshake
     //  - send the username to the server
     //  - dh using RSA generated keys
     return {};
 }
 
-entity::Error FunkyProtocol::Send(int sd, std::string message){
+entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
     
     if (this->sessions_key == ""){
         auto [res, err] = this->LeftHandshake(sd);
@@ -46,7 +44,7 @@ entity::Error FunkyProtocol::Send(int sd, std::string message){
     return entity::ERR_OK;
 }
 
-std::tuple<std::string,entity::Error> FunkyProtocol::Receive(int sd){
+std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
     if (this->sessions_key == ""){
         auto [res, err] = this->RightHandshake(sd);
         if (err != entity::ERR_OK){

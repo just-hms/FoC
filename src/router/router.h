@@ -1,3 +1,6 @@
+#ifndef ROUTER_H
+#define ROUTER_H
+
 #include "./../entity/entity.h"
 #include "./../repo/repo.h"
 #include <string>
@@ -30,3 +33,5 @@ namespace router {
     std::string Handle(int sd, std::string message);
     void Disconnect(int sd);
 }
+
+#endif

@@ -9,23 +9,23 @@ std::vector<uint8_t> mess = {'m', 'e', 's', 's', 'a', 'g', 'e'};
 int TestDH(){
     EVP_PKEY *p, *sdh, *cdh;
 
-    auto error = genDHparam(p);
+    auto error = sec::genDHparam(p);
     ASSERT_FALSE(error < 0);
     
-    error = genDH(sdh, p);
+    error = sec::genDH(sdh, p);
     ASSERT_FALSE(error < 0);
 
-    error = genDH(cdh, p);
+    error = sec::genDH(cdh, p);
     ASSERT_FALSE(error < 0);
 
-    auto lvector = derivateDH(sdh, cdh);
-    auto rvector = derivateDH(cdh, sdh);
+    auto lvector = sec::derivateDH(sdh, cdh);
+    auto rvector = sec::derivateDH(cdh, sdh);
 
     ASSERT_TRUE(lvector == rvector);
 
-    auto key = keyFromSecret(std::string(lvector.begin(), lvector.end()));
+    auto key = sec::keyFromSecret(std::string(lvector.begin(), lvector.end()));
 
-    SymCrypt R(key);
+    sec::SymCrypt R(key);
 
     auto res = R.decrypt(
         R.encrypt( mess)       
@@ -43,15 +43,15 @@ int TestDH(){
 int TestRSA(){
     
     // RSA GENERATION
-    auto err = generateRSAkeys(DATA_PATH + "server", "sercret_server", 4096);
+    auto err = sec::generateRSAkeys(DATA_PATH + "server", "sercret_server", 4096);
     ASSERT_FALSE(err < 0);
 
-    err = generateRSAkeys(DATA_PATH + "client", "sercret_client", 4096);
+    err = sec::generateRSAkeys(DATA_PATH + "client", "sercret_client", 4096);
     ASSERT_FALSE(err < 0);
 
     // AsymCrypt
-    AsymCrypt AS(DATA_PATH + "serverprivk.pem", DATA_PATH + "clientpubk.pem", "sercret_server");
-    AsymCrypt AC(DATA_PATH + "clientprivk.pem", DATA_PATH + "serverpubk.pem", "sercret_client");
+    sec::AsymCrypt AS(DATA_PATH + "serverprivk.pem", DATA_PATH + "clientpubk.pem", "sercret_server");
+    sec::AsymCrypt AC(DATA_PATH + "clientprivk.pem", DATA_PATH + "serverpubk.pem", "sercret_client");
 
 
     // one way
@@ -72,11 +72,11 @@ int TestRSA(){
 
 int TestAES(){
 
-    sessionKey symk;
+    sec::sessionKey symk;
     RAND_bytes(symk.key, SYMMLEN/8);
     RAND_bytes(symk.iv, 16);
 
-    SymCrypt SC(symk);
+    sec::SymCrypt SC(symk);
     auto res = SC.decrypt(
         SC.encrypt(mess)
     );
@@ -96,7 +96,7 @@ int TestAES(){
 
 int TestHash(){
     std::string mess = "message";
-    ASSERT_TRUE(Hash(mess) == Hash(mess));
+    ASSERT_TRUE(sec::Hash(mess) == sec::Hash(mess));
 
     TEST_PASSED();
 }
@@ -104,9 +104,9 @@ int TestHash(){
 int TestHashAndSalt(){
     std::string password = "secret";
 
-    auto hashed = HashAndSalt(password);
+    auto hashandsalt = sec::HashAndSalt(password);
 
-    ASSERT_TRUE(VerifyHash(hashed, password));
+    ASSERT_TRUE(sec::VerifyHash(hashandsalt, password));
 
     TEST_PASSED();
 }
@@ -114,7 +114,7 @@ int TestHashAndSalt(){
 int TestMAC() {
     std::string mess = "message";
 
-    Hmac h("");
+    sec::Hmac h("");
     ASSERT_TRUE(h.MAC(mess) == h.MAC(mess));
 
     TEST_PASSED();

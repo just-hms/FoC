@@ -1,13 +1,18 @@
+#ifndef PROTOCOL_H
+#define PROTOCOL_H
+
 #include <string>
 #include <span>
 #include <tuple>
 
 #include "./../entity/entity.h"
+#include "./../security/security.h"
 
-std::tuple<std::vector<uint8_t>,entity::Error> RawReceive(int sd) noexcept;
-entity::Error RawSend(int sd, std::vector<uint8_t> message) noexcept;
 
 namespace protocol {
+
+    std::tuple<std::vector<uint8_t>,entity::Error> RawReceive(int sd) noexcept;
+    entity::Error RawSend(int sd, std::vector<uint8_t> message) noexcept;
     
     // IProtocol is an interface that represent a protocol
     class IProtocol {
@@ -53,4 +58,4 @@ namespace protocol {
     };
 }
 
-
+#endif

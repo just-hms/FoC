@@ -8,13 +8,10 @@
 
 #include "network.h"
 
-using namespace net;
-
-
 // Server constructor accpet a set of options to build the server object
 //
 // you must specicy a port and a protocol to use
-Server::Server(ServerOption *opt) noexcept{
+net::Server::Server(ServerOption *opt) noexcept{
     if(opt->proto == nullptr){
         std::cerr << "You must specify a protocol " << std::endl;
         exit(EXIT_FAILURE);
@@ -54,7 +51,7 @@ Server::Server(ServerOption *opt) noexcept{
 // Listen handles the incoming connection and messages
 //
 // it uses the specified callbacks to handle the received messages
-void Server::Listen() noexcept{
+void net::Server::Listen() noexcept{
     
     std::cout << "server starting at port :" << this->port << std::endl;
     fd_set master, read_fds;
@@ -135,17 +132,17 @@ void Server::Listen() noexcept{
 }
 
 // SetDisconnectionHandler sets the disconnection_callback to the one specified
-void Server::SetDisconnectionHandler(DisconnectionHandler callback) noexcept {
+void net::Server::SetDisconnectionHandler(DisconnectionHandler callback) noexcept {
     this->disconnection_callback = callback;
 }
 
 // SetRequestHandler sets the message_callback to the one specified
-void Server::SetRequestHandler(RequestHandler callback) noexcept {
+void net::Server::SetRequestHandler(RequestHandler callback) noexcept {
     this->message_callback = callback;
 }
 
 // acceptNewConnection add the socket to the list of available sockets
-int Server::acceptNewConnection(fd_set *master) noexcept {
+int net::Server::acceptNewConnection(fd_set *master) noexcept {
     sockaddr_in cl_addr;
     auto addrlen = sizeof(cl_addr);
     
@@ -160,7 +157,7 @@ int Server::acceptNewConnection(fd_set *master) noexcept {
 }
 
 // disconnect handle the disconnection process
-void Server::disconnect(fd_set *master, int sd) noexcept {
+void net::Server::disconnect(fd_set *master, int sd) noexcept {
     // remove the socket from the list and close it    
     FD_CLR(sd, master);
     close(sd);
@@ -175,10 +172,11 @@ void Server::disconnect(fd_set *master, int sd) noexcept {
     this->disconnection_callback(sd);                
 }
 
-void Server::Stop() noexcept{
+void net::Server::Stop() noexcept{
     this->stop = true;
 }
+
 // ~Server is the server distructor
-Server::~Server() noexcept {;}
+net::Server::~Server() noexcept {;}
 
 
