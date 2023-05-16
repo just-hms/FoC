@@ -1,8 +1,9 @@
 #include "test.h"
 
 int TestRawPingPong() {
-    config::Config cfg{};
+    config::Config cfg;
     protocol::RawProtocol p;
+    router::MockPongRouter router;
 
     // create the client
     net::ClientOption client_opt{
@@ -17,15 +18,9 @@ int TestRawPingPong() {
     net::ServerOption server_opt{
         .port = cfg.ServerPort,
         .proto = &p,
+        .router = &router
     };
     net::Server s(&server_opt);
-
-    s.SetRequestHandler([](int sd, std::string message)->std::string {
-        std::cout << "[server] received : "  << message << std::endl; 
-        return (message == "ping") ?
-            "pong":
-            "not pong";
-    });
 
     // start the server in another thread
     std::thread server_thread([&s](){

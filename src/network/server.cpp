@@ -17,8 +17,14 @@ net::Server::Server(ServerOption *opt) noexcept{
         exit(EXIT_FAILURE);
     }
 
+    if(opt->router == nullptr){
+        std::cerr << "You must specify a router " << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
     this->port = opt->port;
     this->proto = opt->proto;
+    this->router = opt->router;
 
     // create a non blocking socket
     this->listener = socket(
@@ -105,13 +111,8 @@ void net::Server::Listen() noexcept{
                 continue;
             }
 
-            if (this->message_callback == nullptr){
-                std::cout << "Warning: no message handler specified" << std::endl;               
-                continue;
-            }
-            
             // call the message callback
-            auto resp = this->message_callback(
+            auto resp = this->router->Handle(
                 fd, 
                 std::string(res.begin(),res.end())
             );
@@ -129,16 +130,6 @@ void net::Server::Listen() noexcept{
             }
         }        
     }
-}
-
-// SetDisconnectionHandler sets the disconnection_callback to the one specified
-void net::Server::SetDisconnectionHandler(DisconnectionHandler callback) noexcept {
-    this->disconnection_callback = callback;
-}
-
-// SetRequestHandler sets the message_callback to the one specified
-void net::Server::SetRequestHandler(RequestHandler callback) noexcept {
-    this->message_callback = callback;
 }
 
 // acceptNewConnection add the socket to the list of available sockets
@@ -162,14 +153,9 @@ void net::Server::disconnect(fd_set *master, int sd) noexcept {
     FD_CLR(sd, master);
     close(sd);
 
-    if (this->disconnection_callback == nullptr){
-        std::cout << "Warning: no disconnetion callback specified" << std::endl;               
-        return;
-    }
-    
     // call the disconnected callback to make the application 
     // know that the client disconnnected
-    this->disconnection_callback(sd);                
+    this->router->Disconnect(sd);                
 }
 
 void net::Server::Stop() noexcept{

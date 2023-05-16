@@ -6,6 +6,8 @@
 
 protocol::FunkyProtocol::FunkyProtocol(FunkyOptions *opt){
     this->username = opt->username;
+    this->sym = sec::SymCrypt(sec::sessionKey{});
+    this->asy = sec::AsymCrypt("", "", "");
 }
 
 std::tuple<sec::sessionKey,entity::Error> protocol::FunkyProtocol::RightHandshake(int sd){

@@ -7,6 +7,7 @@
 
 #include "./../entity/entity.h"
 #include "./../security/security.h"
+#include "./../network/network.h"
 
 
 namespace protocol {
@@ -14,16 +15,8 @@ namespace protocol {
     std::tuple<std::vector<uint8_t>,entity::Error> RawReceive(int sd) noexcept;
     entity::Error RawSend(int sd, std::vector<uint8_t> message) noexcept;
     
-    // IProtocol is an interface that represent a protocol
-    class IProtocol {
-    public:
-        virtual ~IProtocol() {}
-        virtual entity::Error Send(int sd, std::string message) = 0;
-        virtual std::tuple<std::string,entity::Error> Receive(int sd) = 0;
-    };
-
     // RawProtocol implements the IProtocol sending raw data
-    class RawProtocol : public protocol::IProtocol{
+    class RawProtocol : public net::IProtocol{
     public:
         ~RawProtocol() {}
         virtual entity::Error Send(int sd, std::string message);
@@ -35,7 +28,7 @@ namespace protocol {
     };
 
     // FunkyProtocol implements the IProtocol sending encrypted data
-    class FunkyProtocol : public protocol::IProtocol {
+    class FunkyProtocol : public net::IProtocol {
     private:
 
         // TODO put all of this in a map

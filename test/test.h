@@ -8,6 +8,8 @@
 #include "./../src/network/network.h"
 #include "./../src/config/config.h"
 #include "./../src/security/security.h"
+#include "./../src/protocol/protocol.h"
+#include "./../src/repo/repo.h"
 
 #define ASSERT_EQUAL(expected, actual) \
     if ((expected) != (actual)) { \

@@ -2,9 +2,10 @@
 #include <string>
 
 #include "./../entity/entity.h"
-#include "./../router/router.h"
 #include "./../network/network.h"
 #include "./../config/config.h"
+#include "./../protocol/protocol.h"
+#include "./../router/router.h"
 
 bool Login(net::Client * client, std::string username, std::string password){
     Json::StreamWriterBuilder builder;
@@ -87,7 +88,7 @@ void Balance(net::Client * client){
 
 
 int main() {
-    config::Config cfg{};
+    config::Config cfg;
 
     protocol::RawProtocol p;
 

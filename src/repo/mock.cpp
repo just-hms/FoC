@@ -2,7 +2,7 @@
 #include <memory>
 #include <vector>
 
-std::shared_ptr<entity::User> repo::Login(std::string username, std::string password){
+std::shared_ptr<entity::User> repo::MockRepo::Login(std::string username, std::string password){
     if (username!="kek" || password != "kek"){
         return nullptr;
     }
@@ -15,15 +15,15 @@ std::shared_ptr<entity::User> repo::Login(std::string username, std::string pass
 }
 
 
-int repo::Balance(std::string USER_ID){
+int repo::MockRepo::Balance(std::string USER_ID){
     return 10;
 }
 
-bool repo::Transfer(std::string USER_ID, std::string to, float amount){
+bool repo::MockRepo::Transfer(std::string USER_ID, std::string to, float amount){
     return true;
 }
 
-entity::History repo::History(std::string username){
+entity::History repo::MockRepo::History(std::string username){
     auto transactions = entity::History();
 
     transactions.push_back(entity::Transaction{
