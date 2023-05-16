@@ -8,7 +8,7 @@
 #include <vector>
 
 
-protocol::FunkyProtocol::FunkyProtocol(FunkyOptions *opt){}
+protocol::FunkyProtocol::FunkyProtocol(){}
 
 std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol::FunkyProtocol::RightHandshake(int sd){
     // TODO implement the RightHandshake
