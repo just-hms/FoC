@@ -25,10 +25,6 @@ namespace protocol {
         virtual std::tuple<std::string,entity::Error> Receive(int sd);
     };
 
-    struct FunkyOptions {
-        std::string username;
-    };
-
     struct FunkySecuritySuite {
         // std::string username;
         sec::SymCrypt sym;
@@ -51,7 +47,7 @@ namespace protocol {
     public:
         // TODO: edit constructor to accept cfg
         ~FunkyProtocol() {}
-        FunkyProtocol(FunkyOptions *opt);
+        FunkyProtocol();
 
         // Send and Receive implementations
         virtual entity::Error Send(int sd, std::string message);
