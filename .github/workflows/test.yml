@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: Install libraries
+      - name: Install libraries
         run: |
           sudo apt install libssl-dev
           sudo apt install libjsoncpp-dev
