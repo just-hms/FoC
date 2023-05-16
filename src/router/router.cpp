@@ -1,0 +1,160 @@
+#include "router.h"
+
+
+// map of currently logged users SD -> entity:User
+std::unordered_map<int, std::shared_ptr<entity::User>> users;
+
+Json::Value ExitWithJSON(int status, std::string message=""){
+    Json::StreamWriterBuilder builder;
+    Json::Value out;
+    out["status"] = status;
+    out["message"] = message;
+    return out;
+}
+
+Json::Value Login(router::Context *ctx){
+    if (ctx->user != nullptr){
+        return ExitWithJSON(router::STATUS_UNAUTHORIZED);
+    }
+
+    auto content = ctx->req["content"];
+    if (!content.isObject()){
+        return ExitWithJSON(router::STATUS_BAD_REQUEST);
+    }
+
+    auto res =  repo::Login(
+        content["username"].asString(),
+        content["password"].asString()
+    );
+
+    if (!res){
+        return ExitWithJSON(
+            router::STATUS_UNAUTHORIZED, 
+            "wrong username or password"
+        );
+    }
+
+    // add user to the map of logged in users
+    users[ctx->connectionID] = res; 
+
+    return ExitWithJSON(router::STATUS_OK);
+}
+
+Json::Value Balance(router::Context *ctx){
+    if (ctx->user == nullptr){
+        return ExitWithJSON(router::STATUS_UNAUTHORIZED);
+    }
+
+    auto balance = repo::Balance(ctx->user->ID);
+
+    // return the custom balance response
+    Json::Value out;
+    out["status"] = router::STATUS_OK;
+    out["balance"] = balance;
+    
+    return out;
+}
+
+Json::Value Transfer(router::Context *ctx){
+    if (ctx->user == nullptr){
+        return ExitWithJSON(router::STATUS_UNAUTHORIZED);
+    }
+
+    auto content = ctx->req["content"];
+    if (!content.isObject()){
+        return ExitWithJSON(router::STATUS_BAD_REQUEST);
+    }
+
+    auto username = content["username"].asString();
+    auto amount = content["amount"].asInt();
+
+    auto res =  repo::Transfer(
+        ctx->user->ID,
+        content["to"].asString(),
+        content["amount"].asInt()
+    );
+    
+    if (!res){
+        return ExitWithJSON(router::STATUS_BAD_REQUEST);
+    }
+
+    return ExitWithJSON(router::STATUS_OK);
+}
+
+Json::Value History(router::Context *ctx){
+    if (ctx->user == nullptr){
+        return ExitWithJSON(router::STATUS_UNAUTHORIZED);
+    }
+
+    auto history = repo::History(ctx->user->username);
+
+    // return the custom balance history
+    Json::Value out;
+    out["status"] = router::STATUS_OK;
+    out["history"] = Json::arrayValue;
+    
+    for (const auto& transfer : history) {
+        Json::Value jsonTransfer;
+        
+        jsonTransfer["amount"] = transfer.amount;
+        jsonTransfer["from"] = transfer.from;
+        jsonTransfer["to"] = transfer.to;
+
+        out["history"].append(jsonTransfer);
+    }
+    
+    return out;
+}
+
+
+void router::Disconnect(int sd){
+    auto it = users.find(sd);
+    if (it == users.end()){
+        return;
+    }
+
+    std::string route = "logout";
+    std::cout << "/" << route <<  std::string(10 - route.length(), ' ' ) << 201 << std::endl; 
+    users.erase(sd);
+}
+
+
+std::string router::Handle(int sd, std::string message){
+    Json::Reader reader;
+    Json::Value content;
+    reader.parse(message, content);
+
+    std::shared_ptr<entity::User> us = nullptr;
+
+    // extract the user from the map
+    auto it = users.find(sd);
+
+    // if exists set it
+    if (it != users.end()){
+        us = it->second;
+    }
+
+    // create the context
+    router::Context ctx{
+        .user = us,
+        .req = content,
+        .connectionID = sd,
+    };
+
+
+    auto out = ExitWithJSON(STATUS_NOT_FOUND); 
+
+    auto route = content["route"].asString();
+
+    if (route == "login")           out = Login(&ctx);
+    else if (route == "balance")    out = Balance(&ctx);
+    else if (route == "transfer")   out = Transfer(&ctx);
+    else if (route == "history")    out = History(&ctx);
+
+    // log the request
+    std::cout << "/" << route <<  std::string(10 - route.length(), ' ' ) << out["status"] << std::endl; 
+
+    Json::StreamWriterBuilder builder;
+    std::string str = Json::writeString(builder, out);
+    return str;
+}
