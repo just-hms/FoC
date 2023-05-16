@@ -7,10 +7,23 @@
 #include "./../src/router/router.h"
 #include "./../src/network/network.h"
 #include "./../src/config/config.h"
+#include "./../src/security/security.h"
 
-#define ASSERT(expected, actual) \
+#define ASSERT_EQUAL(expected, actual) \
     if ((expected) != (actual)) { \
         std::cerr << "\033[31m" << __FUNCTION__ << " expected: " << (expected) << " got: " << (actual) << " at line " << __LINE__ << "\033[0m" << std::endl; \
+        return 1; \
+    }
+
+#define ASSERT_TRUE(cond) \
+    if (!(cond)) { \
+        std::cerr << "\033[31m" << __FUNCTION__ << " expected: " << true << " got: " << false << " at line " << __LINE__ << "\033[0m" << std::endl; \
+        return 1; \
+    }
+
+#define ASSERT_FALSE(cond) \
+    if (cond) { \
+        std::cerr << "\033[31m" << __FUNCTION__ << " expected: " << false << " got: " << true << " at line " << __LINE__ << "\033[0m" << std::endl; \
         return 1; \
     }
 
@@ -20,3 +33,9 @@
 
 int TestRawPingPong();
 int TestFunkyPingPong();
+int TestDH();
+int TestRSA();
+int TestAES();
+int TestHash();
+int TestHashAndSalt();
+int TestMAC();

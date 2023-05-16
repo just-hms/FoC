@@ -14,9 +14,11 @@ Config::Config() noexcept{
 
     reader.parse(ifs, obj);
 
-    // get the server port (5050 as default)
+    auto a = obj.get("kek", "");
 
-    this->ServerPort = (obj[SERVER_PORT].empty()) ? 
-        5050 : 
-        obj[SERVER_PORT].asInt();
+    // get the server port (5050 as default)
+    this->ServerPort = obj.get(
+        SERVER_PORT, 
+        5050
+    ).asInt();
 }

@@ -2,6 +2,8 @@
 build/*
 !build/.gitkeep
 
+data/*
+!data/.gitkeep
 
 # ide
 .vscode/

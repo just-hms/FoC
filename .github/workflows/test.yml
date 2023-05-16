@@ -1,0 +1,17 @@
+name: Test
+
+on: push
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install libraries
+        run: |
+          sudo apt install libssl-dev
+          sudo apt install libjsoncpp-dev
+
+      - name: Run test
+        run: make test
