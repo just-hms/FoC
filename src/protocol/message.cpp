@@ -42,6 +42,7 @@ std::tuple<std::vector<uint8_t>,entity::Error> protocol::RawReceive(int sd) noex
     // Allocate a receive buffer
     message.resize(len, 0x00);
 
+    // TODO: add while
     res = recv(sd, message.data(), len, 0);
     
     return {
@@ -60,6 +61,7 @@ entity::Error protocol::RawSend(int sd, std::vector<uint8_t> message) noexcept {
     
     auto web_len = htonl(message.size());
 
+    // TODO: add while
     auto res = send(sd, &web_len, sizeof(size_t), 0);
 
 

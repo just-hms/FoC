@@ -1,12 +1,14 @@
 #include "protocol.h"
+#include <cstdint>
 #include <span>
 #include <utility>
+#include <vector>
 
 protocol::FunkyProtocol::FunkyProtocol(FunkyOptions *opt){
     this->username = opt->username;
 }
 
-std::tuple<std::span<uint8_t>,entity::Error> protocol::FunkyProtocol::RightHandshake(int sd){
+std::tuple<sec::sessionKey,entity::Error> protocol::FunkyProtocol::RightHandshake(int sd){
     // TODO implement the RightHandshake
     //  - send the username to the server
     //  - dh using RSA generated keys
@@ -14,7 +16,7 @@ std::tuple<std::span<uint8_t>,entity::Error> protocol::FunkyProtocol::RightHands
 }
 
 
-std::tuple<std::span<uint8_t>,entity::Error> protocol::FunkyProtocol::LeftHandshake(int sd){
+std::tuple<sec::sessionKey,entity::Error> protocol::FunkyProtocol::LeftHandshake(int sd){
     // TODO implement the LeftHandshake
     //  - send the username to the server
     //  - dh using RSA generated keys
@@ -23,29 +25,37 @@ std::tuple<std::span<uint8_t>,entity::Error> protocol::FunkyProtocol::LeftHandsh
 
 entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
     
-    if (this->sessions_key == ""){
+    // TODO this check is not correct
+    if (!this->InSession){
         auto [res, err] = this->LeftHandshake(sd);
         if (err != entity::ERR_OK){
             return err;
         }
         
-        // maybe always use a span   
-        this->sessions_key = std::string(
-            res.begin(), 
-            res.end()
-        );
+        this->sym.refresh(res);
     }
 
-    // TODO: implement encrypted send
-    //  - encrypt using session key
-    //  - add hash for integreity
-    //  - call raw send
+    //  encrypt using session key
+    auto out = this->sym.encrypt(
+        std::vector<uint8_t>(message.begin(), message.end())
+    );
 
-    return entity::ERR_OK;
+    // generating hash for integreity
+    // TODO : use vector<uint8_t> inside Hmac
+    auto mac = this->mac.MAC(std::string(out.begin(), out.end()));
+    
+    // add hash to the message
+    out.insert(out.end(), mac.begin(), mac.end());
+
+    // call rawsend
+    return protocol::RawSend(
+        sd, 
+        std::vector<uint8_t>(out.begin(),out.end())
+    );
 }
 
 std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
-    if (this->sessions_key == ""){
+    if (!this->InSession){
         auto [res, err] = this->RightHandshake(sd);
         if (err != entity::ERR_OK){
             return {
@@ -53,19 +63,22 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
                 err
             };
         }
-        
-        // TODO: maybe always use a span   
-        this->sessions_key = std::string(
-            res.begin(), 
-            res.end()
-        );
+
+        this->sym.refresh(res);
     }
 
+    //  call raw receive
+    auto [res, err] = protocol::RawReceive(sd);
+    if (err != entity::ERR_OK){
+        return {
+            "",
+            err
+        };
+    }
 
-    // TODO: implement encrypted receive
-    //  - call raw receive
-    //  - extract hash and check for integrity
-    //  - decrypt using session key
+    //  extract hash and check for integrity
+
+    //  decrypt using session key
 
     return {
         "",

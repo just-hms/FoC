@@ -58,7 +58,7 @@ std::string sec::Hmac::MAC(std::string data) {
     }
     HMAC_CTX_free(ctx);
 
-    std::string res = encode((char*) buffer, len);
+    std::string res = sec::encode((char*) buffer, len);
     delete[] buffer;
 
     return res;

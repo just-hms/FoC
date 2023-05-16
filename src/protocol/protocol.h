@@ -37,14 +37,20 @@ namespace protocol {
     // FunkyProtocol implements the IProtocol sending encrypted data
     class FunkyProtocol : public protocol::IProtocol {
     private:
-        std::string sessions_key;
+
+        // TODO put all of this in a map
+        bool InSession;
         std::string username;
+        
+        sec::SymCrypt sym;
+        sec::Hmac mac;
+        sec::AsymCrypt asy;
         
         // lazy handshakes
         //  - this function are called silently inside the Send and Receive
         //  - the handshake starts if no sessions_key is currently available
-        std::tuple<std::span<uint8_t>,entity::Error> LeftHandshake(int sd);
-        std::tuple<std::span<uint8_t>,entity::Error> RightHandshake(int sd);
+        std::tuple<sec::sessionKey,entity::Error> LeftHandshake(int sd);
+        std::tuple<sec::sessionKey,entity::Error> RightHandshake(int sd);
     public:
         // TODO: edit constructor to accept cfg
         ~FunkyProtocol() {}
