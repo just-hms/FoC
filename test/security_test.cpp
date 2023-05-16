@@ -4,6 +4,8 @@
 
 std::vector<uint8_t> mess = {'m', 'e', 's', 's', 'a', 'g', 'e'};
 
+#define DATA_PATH std::string("./data/")
+
 int TestDH(){
     EVP_PKEY *p, *sdh, *cdh;
 
@@ -41,15 +43,15 @@ int TestDH(){
 int TestRSA(){
     
     // RSA GENERATION
-    auto err = generateRSAkeys("server", "server", 4096);
+    auto err = generateRSAkeys(DATA_PATH + "server", "sercret_server", 4096);
     ASSERT_FALSE(err < 0);
 
-    err = generateRSAkeys("client", "client", 4096);
+    err = generateRSAkeys(DATA_PATH + "client", "sercret_client", 4096);
     ASSERT_FALSE(err < 0);
 
     // AsymCrypt
-    AsymCrypt AS("serverprivk.pem", "clientpubk.pem", "server");
-    AsymCrypt AC("clientprivk.pem", "serverpubk.pem", "client");
+    AsymCrypt AS(DATA_PATH + "serverprivk.pem", DATA_PATH + "clientpubk.pem", "sercret_server");
+    AsymCrypt AC(DATA_PATH + "clientprivk.pem", DATA_PATH + "serverpubk.pem", "sercret_client");
 
 
     // one way
