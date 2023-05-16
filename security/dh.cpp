@@ -39,6 +39,32 @@ EVP_PKEY* decodePublicKey(const string& encodedKey) {
     return publicKey;
 }
 
+//generate g and p
+int genDHparam(EVP_PKEY *&params) {
+
+    DH* tmp = DH_get_2048_256();
+    if(tmp == NULL) {
+        cerr<<"Couldn't create DH"<<endl;
+        return -1;
+    }
+
+    if(!(params = EVP_PKEY_new())) {
+        cerr<<"Couldn't create DH"<<endl;
+        DH_free(tmp);
+        return -1;
+    }
+
+    if(EVP_PKEY_set1_DH(params, tmp) <= 0) {
+        cerr<<"Couldn't set DH"<<endl;
+        DH_free(tmp);
+        return -1;
+    }
+
+    DH_free(tmp);
+    
+    return 0;
+}
+
 int genDH(EVP_PKEY *&pubk, EVP_PKEY *params) {
 
     EVP_PKEY_CTX *ctx;
@@ -48,81 +74,63 @@ int genDH(EVP_PKEY *&pubk, EVP_PKEY *params) {
         cerr<<"Couldn't create a context for DH"<<endl;
         return -1;
     }
+
     if(EVP_PKEY_keygen_init(ctx) <= 0) {
         cerr<<"Couldn't initialize context for DH"<<endl;
         EVP_PKEY_CTX_free(ctx);
         return -1;
     }
+
+    pubk = NULL;
     if(EVP_PKEY_keygen(ctx, &pubk) <= 0) {
         cerr<<"Couldn't generate key for DH"<<endl;
         EVP_PKEY_CTX_free(ctx);
         return -1;
     }
+
     EVP_PKEY_CTX_free(ctx);
 
     return 0;
 
 }
 
-//generate g and p
-int genECDHparam(EVP_PKEY *&params) {
-
-    DH* tmp = DH_get_2048_256();
-    if(tmp == NULL) {
-        cerr<<"Couldn't create DH"<<endl;
-        return -1;
-    }
-    if(!(params = EVP_PKEY_new())) {
-        cerr<<"Couldn't create DH"<<endl;
-        DH_free(tmp);
-        return -1;
-    }
-    if(EVP_PKEY_set1_DH(params, tmp) <= 0) {
-        cerr<<"Couldn't set DH"<<endl;
-        DH_free(tmp);
-        return -1;
-    }
-    DH_free(tmp);
-    
-    return 0;
-}
-
-string derivateDH(EVP_PKEY *privk, EVP_PKEY *peerk) {
+vector<uint8_t> derivateDH(EVP_PKEY *privk, EVP_PKEY *peerk) {
     EVP_PKEY_CTX *ctx;
+    vector<uint8_t> secret;
+    size_t secretlen;
+
     if(!(ctx = EVP_PKEY_CTX_new(privk, NULL))) {
         cerr<<"Couldn't create a context for DH"<<endl;
-        return "";
+        return {};
     }
+
     if(EVP_PKEY_derive_init(ctx) <= 0) {
         cerr<<"Couldn't initialize deriving context for DH"<<endl;
         EVP_PKEY_CTX_free(ctx);
-        return "";
+        return {};
     }
+
     if(EVP_PKEY_derive_set_peer(ctx, peerk) <= 0) {
         cerr<<"Couldn't set peer for DH deriving context"<<endl;
         EVP_PKEY_CTX_free(ctx);
-        return "";
+        return {};
     }
 
     //derives DH shared secret and returns it in 'secret'
-    unsigned char *secret;
-    size_t secretlen;
-
     if(EVP_PKEY_derive(ctx, NULL, &secretlen) <= 0) {
         cerr<<"Couldn't derive DH key length"<<endl;
         EVP_PKEY_CTX_free(ctx);
-        return "";
+        return {};
     }
-    secret = new unsigned char[secretlen];
-    if(EVP_PKEY_derive(ctx, secret, &secretlen) <= 0) {
+    secret.resize(secretlen);
+
+    if(EVP_PKEY_derive(ctx, secret.data(), &secretlen) <= 0) {
         cerr<<"Couldn't derive DH key"<<endl;
         EVP_PKEY_CTX_free(ctx);
-        return "";
+        return {};
     }
+
     EVP_PKEY_CTX_free(ctx);
 
-    string res = string((char*) secret);
-    delete[] secret;
-
-    return res;
+    return secret;
 }

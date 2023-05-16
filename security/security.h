@@ -65,6 +65,12 @@ class SymCrypt {
 // RSAGEN
 int generateRSAkeys(std::string, std::string, unsigned int);
 
+//DH
+int genDHparam(EVP_PKEY*&);
+int genDH(EVP_PKEY*&, EVP_PKEY*);
+std::vector<uint8_t> derivateDH(EVP_PKEY*, EVP_PKEY*);
+
+//HMAC
 class Hmac {
     unsigned char key[16];
 
@@ -75,11 +81,9 @@ class Hmac {
 };
 
 // PASSWORD
-
 std::string Hash(std::string);
 std::string HashAndSalt(std::string, std::string);
 bool VerifyHash(std::string, std::string);
 
 //ENCODING
-
 std::string encode(char*, int);

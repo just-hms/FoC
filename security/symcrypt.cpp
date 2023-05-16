@@ -42,8 +42,9 @@ vector<uint8_t> SymCrypt::encrypt(vector<uint8_t> pt) {
         return {};
     }
     ctlen += len;
-
     EVP_CIPHER_CTX_free(ctx);
+
+    ct.resize(ctlen);
 
     return ct;
     
@@ -68,14 +69,14 @@ vector<uint8_t> SymCrypt::decrypt(vector<uint8_t> ct) {
 
     pt.resize(ct.size());
 
-    if(EVP_DecryptUpdate(ctx, pt.data(), &len, ct.data(), ct.size()) < 0) {
+    if(EVP_DecryptUpdate(ctx, pt.data(), &len, ct.data(), ct.size()) <= 0) {
         cerr<<"Unable to decrypt with SymCrypt"<<endl;
         EVP_CIPHER_CTX_free(ctx);
         return {};
     }
     ptlen = len;
 
-    if(EVP_DecryptFinal_ex(ctx, pt.data() + len, &len) < 0) {
+    if(EVP_DecryptFinal_ex(ctx, pt.data() + len, &len) <= 0) {
         cerr<<"Unable to decrypt with SymCrypt"<<endl;
         EVP_CIPHER_CTX_free(ctx);
         return {};
