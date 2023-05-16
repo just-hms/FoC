@@ -16,7 +16,7 @@
     }
 
 #define ASSERT_TRUE(cond) \
-    if (cond) { \
+    if (!(cond)) { \
         std::cerr << "\033[31m" << __FUNCTION__ << " expected: " << true << " got: " << false << " at line " << __LINE__ << "\033[0m" << std::endl; \
         return 1; \
     }

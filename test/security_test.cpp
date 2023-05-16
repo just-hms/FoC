@@ -29,7 +29,7 @@ int TestDH(){
         R.encrypt( mess)       
     );
 
-    ASSERT_TRUE(mess == res)
+    ASSERT_TRUE(mess == res);
 
     EVP_PKEY_free(p);
     EVP_PKEY_free(sdh);
@@ -98,7 +98,6 @@ int TestHash(){
 
     TEST_PASSED();
 }
-
 
 int TestHashAndSalt(){
     std::string password = "secret";
