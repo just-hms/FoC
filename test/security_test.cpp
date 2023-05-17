@@ -7,12 +7,13 @@ std::vector<uint8_t> mess = {'m', 'e', 's', 's', 'a', 'g', 'e'};
 #define DATA_PATH std::string("./data/")
 
 int TestDH(){
-    EVP_PKEY *p, *sdh, *cdh;
+    //parameter generation, key generation and derivation
+    EVP_PKEY *p = NULL, *sdh = NULL, *cdh = NULL;
 
-    auto error = sec::genDHparam(p);
-    ASSERT_FALSE(error < 0);
+    auto DHserialized = sec::genDHparam(p);
+    ASSERT_FALSE(DHserialized.size() == 0);
     
-    error = sec::genDH(sdh, p);
+    auto error = sec::genDH(sdh, p);
     ASSERT_FALSE(error < 0);
 
     error = sec::genDH(cdh, p);
@@ -23,6 +24,20 @@ int TestDH(){
 
     ASSERT_TRUE(lvector == rvector);
 
+    //DH parameters communication
+    EVP_PKEY *p2 = NULL;
+    DHserialized = sec::genDHparam(p2);
+    ASSERT_FALSE(sec::genDHparam(p) != sec::genDHparam(p2));
+    EVP_PKEY *p3 = sec::retrieveDHparam(DHserialized); 
+    ASSERT_TRUE(DHserialized == sec::genDHparam(p3));
+
+    //check if using different parameters leads to different shared secret
+    sec::genDHparam(p2);
+    EVP_PKEY *sdh2 = NULL;
+    sec::genDH(sdh2, p2);
+    ASSERT_TRUE(sec::derivateDH(cdh, sdh2) != sec::derivateDH(cdh, sdh));
+
+    //check if both parties derive the same key
     auto k1 = sec::keyFromSecret(lvector);
     auto k2 = sec::keyFromSecret(rvector);
     std::vector<uint8_t> tmp1(32), tmp2(16), tmp3(32), tmp4(16);

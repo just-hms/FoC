@@ -38,6 +38,7 @@ namespace sec {
 
         public:
             AsymCrypt(std::string path_private_key, std::string path_public_key_peer, std::string password);
+            void setPeerKey(std::string path_public_key_peer);
             std::vector<uint8_t> encrypt(std::vector<uint8_t> plaintext);
             std::vector<uint8_t> decrypt(std::vector<uint8_t> ciphertext);
     };
@@ -67,9 +68,10 @@ namespace sec {
     
     int generateRSAkeys(std::string path, std::string password, unsigned int bits);
 
-    int genDHparam(EVP_PKEY*&);
-    int genDH(EVP_PKEY*&, EVP_PKEY*);
-    std::vector<uint8_t> derivateDH(EVP_PKEY*, EVP_PKEY*);
+    std::vector<uint8_t> genDHparam(EVP_PKEY *&params);
+    EVP_PKEY* retrieveDHparam(std::vector<uint8_t> DHserialized);
+    int genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
+    std::vector<uint8_t> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
     sessionKey keyFromSecret(std::vector<uint8_t> secret);
 
     class Hmac {
@@ -78,6 +80,7 @@ namespace sec {
         public:
             Hmac();
             Hmac(std::vector<uint8_t> key);
+            unsigned char* getKey();
             std::vector<uint8_t> MAC(std::vector<uint8_t> data);
     };
 
@@ -87,6 +90,7 @@ namespace sec {
 
     std::string encode(char* data, int datalen);
     std::vector<uint8_t>encodePublicKey(EVP_PKEY *keyToEncode);
+    std::vector<uint8_t>encodeDH(DH *dh);
     EVP_PKEY* decodePublicKey(std::vector<uint8_t> encodedKey);
 
 }

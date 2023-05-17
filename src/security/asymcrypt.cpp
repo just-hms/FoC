@@ -19,12 +19,21 @@ int pem_password_callback(char *buf, int max_len, int flag, void *udata) {
     return len;
 }
 
+void sec::AsymCrypt::setPeerKey(std::string pubk_file) {
+    this->pubk = pubk_file;
+}
+
 //encrypts mes using userID's public key
 std::vector<uint8_t> sec::AsymCrypt::encrypt(std::vector<uint8_t> mess) {
     EVP_PKEY_CTX *ctx;
     EVP_PKEY *key;
     size_t ctlen;
     std::vector<uint8_t> ct;
+
+    if(this->pubk.size() == 0) {
+        std::cerr<<"Peer key hasn't been set yet"<<std::endl;
+        return {};
+    }
 
     FILE *fp = fopen((this->pubk).c_str(), "r");
     if(fp == NULL) {

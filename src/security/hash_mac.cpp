@@ -26,6 +26,10 @@ sec::Hmac::Hmac(std::vector<uint8_t> key) {
     memcpy(this->key, key.data(), HMAC_KEY_LEN);
 }
 
+unsigned char* sec::Hmac::getKey() {
+    return this->key;
+}
+
 //builds and returns a MAC in hex string form
 std::vector<uint8_t> sec::Hmac::MAC(std::vector<uint8_t> data) {
     std::vector<uint8_t>res(EVP_MD_size(EVP_sha3_512()));

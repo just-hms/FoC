@@ -5,20 +5,21 @@ std::vector<uint8_t> sec::encodePublicKey(EVP_PKEY* publicKey) {
 
     BIO* bio = BIO_new(BIO_s_mem());
     std::vector<uint8_t>res;
+
     if(bio == NULL) {
         std::cerr<<"Couldn't allocate BIO structure"<<std::endl;
-        BIO_free(bio);
         return {};
     }
+
     if(PEM_write_bio_PUBKEY(bio, publicKey) <= 0) {
         std::cerr<<"Couldn't write public key"<<std::endl;
         BIO_free(bio);
         return {};
     }
+
     char *buffer;
     res.resize(BIO_get_mem_data(bio, &buffer));
     memcpy(res.data(), buffer, res.size());
-    delete buffer;
     
     BIO_free(bio);
     return res;
@@ -40,34 +41,74 @@ EVP_PKEY* sec::decodePublicKey(std::vector<uint8_t> encodedKey) {
 }
 
 //generate g and p
-int sec::genDHparam(EVP_PKEY *&params) {
+std::vector<uint8_t> sec::genDHparam(EVP_PKEY *&params) {
 
-    DH* tmp = DH_get_2048_256();
+    DH *tmp = DH_get_2048_256();
+    std::vector<uint8_t>res;
+
     if(tmp == NULL) {
         std::cerr<<"Couldn't create DH"<<std::endl;
-        return -1;
+        return {};
     }
 
     if(!(params = EVP_PKEY_new())) {
         std::cerr<<"Couldn't create DH"<<std::endl;
         DH_free(tmp);
-        return -1;
+        return {};
     }
 
     if(EVP_PKEY_set1_DH(params, tmp) <= 0) {
         std::cerr<<"Couldn't set DH"<<std::endl;
         DH_free(tmp);
-        return -1;
+        return {};
     }
+
+    unsigned char *buffer = NULL;
+    int len = i2d_DHparams(tmp, &buffer);
+    if(len <= 0) {
+        std::cerr<<"Couldn't encode DH"<<std::endl;
+        DH_free(tmp);
+        return {};
+    }
+
+    res.resize(len);
+    memcpy(res.data(), buffer, res.size());
 
     DH_free(tmp);
     
-    return 0;
+    return res;
+}
+
+EVP_PKEY* sec::retrieveDHparam(std::vector<uint8_t> DHserialized) {
+    unsigned char *buffer = new unsigned char[DHserialized.size()];
+    memcpy(buffer, DHserialized.data(), DHserialized.size());
+    DH *tmp = d2i_DHparams(NULL, (const unsigned char**)&buffer, DHserialized.size());
+    if(tmp == NULL) {
+        std::cerr<<"Couldn't retrieve DH"<<std::endl;
+        return NULL;
+    }
+
+    EVP_PKEY *params;
+
+    if(!(params = EVP_PKEY_new())) {
+        std::cerr<<"Couldn't create DH"<<std::endl;
+        DH_free(tmp);
+        return {};
+    }
+
+    if(EVP_PKEY_set1_DH(params, tmp) <= 0) {
+        std::cerr<<"Couldn't set DH"<<std::endl;
+        DH_free(tmp);
+        return {};
+    }
+
+    DH_free(tmp);
+    return params;
 }
 
 int sec::genDH(EVP_PKEY *&pubk, EVP_PKEY *params) {
 
-    EVP_PKEY_CTX *ctx;
+    EVP_PKEY_CTX *ctx; 
 
     //generate keys
     if(!(ctx = EVP_PKEY_CTX_new(params, NULL))) {
