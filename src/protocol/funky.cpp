@@ -123,7 +123,7 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     }
 
     auto encodedRightDH = suite->asy.decrypt(res);
-    auto rightDH = sec::decodePublicKey(encodedParamsDH);
+    auto rightDH = sec::decodePublicKey(encodedRightDH);
 
     // 4. Send leftDH key
     EVP_PKEY *leftDH = nullptr;
