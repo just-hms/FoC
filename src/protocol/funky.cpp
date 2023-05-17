@@ -15,7 +15,7 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     //  1. Receive handshake message from client, build new AsymCrypt obj
     auto [res, err1] = protocol::RawReceive(sd);
     if (err1 != entity::ERR_OK){
-        return {{},err1};
+        return {{}, err1};
     }
 
     suite->asy = sec::AsymCrypt(
@@ -24,10 +24,13 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
         "secret"
     );
 
-    auto rawMessage = suite->asy.decrypt(res);
+    auto message = suite->asy.decrypt(res);
     char username[entity::UNAME_MAX_LEN];
     size_t timestamp;
-    sscanf((char*) rawMessage.data(), "%20s|%s\n", username, &timestamp);   //test overflow
+    sscanf((char*) message.data(), "%20s|%s\n", username, &timestamp);   //test overflow
+
+    auto ts = time(NULL);
+    if(timestamp > ts - entity::ACCEPTANCE_WINDOW) return {{}, err1};   //message has to be sent in the last ACCEPTANCE_WINDOW seconds
 
     suite->asy.setPeerKey(std::string(username)+PUBK);  //missing initial path, should be provided when building FunkyProtocol obj
     
@@ -38,7 +41,7 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
 
     auto err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{},err};
+        return {{}, err};
     }
 
     //  3. Generate and send to client the server's DH public key
@@ -46,15 +49,15 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     auto encodedRightDH = sec::encodePublicKey(rightDH);
     out = suite->asy.encrypt(encodedRightDH);
 
-    auto err = protocol::RawSend(sd, out);
+    err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{},err};
+        return {{}, err};
     }
 
     // 4. Receive client's DH public key
     auto [res, err1] = protocol::RawReceive(sd);
     if (err1 != entity::ERR_OK){
-        return {{},err1};
+        return {{}, err1};
     }
 
     auto encodedLeftDH = suite->asy.decrypt(res);
@@ -66,17 +69,31 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
 
     suite->sym = sec::SymCrypt(key);
 
-    //  6. Creation and delivery of mac symmetric key
+    //  6. Creation and delivery of MAC symmetric key
     suite->mac = sec::Hmac();
     unsigned char *MACk = suite->mac.getKey();
     out = suite->sym.encrypt(std::vector<uint8_t>(MACk, MACk + 16));
-    auto err = protocol::RawSend(sd, out);
+    err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{},err};
+        return {{}, err};
     }
 
-    // TODO
-    //  - add hash of message history to check integrity
+    //  7. MAC of the all session
+    std::vector<uint8_t> HSsession;
+    HSsession.insert(HSsession.end(), message.begin(), message.end());
+    HSsession.insert(HSsession.end(), DH.begin(), DH.end());
+    HSsession.insert(HSsession.end(), encodedRightDH.begin(), encodedRightDH.end());
+    HSsession.insert(HSsession.end(), encodedLeftDH.begin(), encodedLeftDH.end());
+    HSsession.insert(HSsession.end(), secret.begin(), secret.end());
+
+    auto hashedSession = suite->mac.MAC(HSsession);
+    auto [res, err1] = protocol::RawReceive(sd);
+    if (err1 != entity::ERR_OK){
+        return {{}, err1};
+    }
+
+    if(suite->sym.decrypt(res) != hashedSession) return {{}, err1};
+
 
     return {suite, entity::ERR_OK};
 }
@@ -102,15 +119,15 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
         std::vector<uint8_t>(message.begin(), message.end())
     );
 
-    auto err = protocol::RawSend(sd,out);
+    auto err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{},err};
+        return {{}, err};
     }
 
     // 2. Receive DH parameter
     auto [res, err1] = protocol::RawReceive(sd);
     if (err1 != entity::ERR_OK){
-        return {{},err1};
+        return {{}, err1};
     }
 
     auto DH = suite->asy.decrypt(res);
@@ -119,7 +136,7 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     // 3. Receive rightDH key
     auto [re2, err2] = protocol::RawReceive(sd);
     if (err2 != entity::ERR_OK){
-        return {{},err1};
+        return {{}, err1};
     }
 
     auto encodedRightDH = suite->asy.decrypt(res);
@@ -130,12 +147,12 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     
     sec::genDH(leftDH, paramsDH);
 
-    auto encodeLeftDH = sec::encodePublicKey(leftDH);
-    out = suite->asy.encrypt(encodeLeftDH);
+    auto encodedLeftDH = sec::encodePublicKey(leftDH);
+    out = suite->asy.encrypt(encodedLeftDH);
 
-    err = protocol::RawSend(sd,out);
+    err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{},err};
+        return {{}, err};
     }
 
     // 5. Derivate secret, generate key for SymCrypt
@@ -145,17 +162,29 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     suite->sym = sec::SymCrypt(key);
 
 
-    // 6. Receive the key to be used in mac 
+    // 6. Receive the key to be used in MAC 
     auto [res6, err6] = protocol::RawReceive(sd);
     if (err6 != entity::ERR_OK){
-        return {{},err1};
+        return {{}, err1};
     }
 
     auto decryptedMacKey = suite->sym.decrypt(res6);
     suite->mac = sec::Hmac(decryptedMacKey);
     
-    // TODO
-    //  - add hash of message history to check integrity
+    //  7. MAC of all the session
+    std::vector<uint8_t> HSsession;
+    HSsession.insert(HSsession.end(), message.begin(), message.end());
+    HSsession.insert(HSsession.end(), DH.begin(), DH.end());
+    HSsession.insert(HSsession.end(), encodedRightDH.begin(), encodedRightDH.end());
+    HSsession.insert(HSsession.end(), encodedLeftDH.begin(), encodedLeftDH.end());
+    HSsession.insert(HSsession.end(), secret.begin(), secret.end());
+
+    auto hashedSession = suite->mac.MAC(HSsession);
+    out = suite->sym.encrypt(hashedSession);
+    auto err = protocol::RawSend(sd, out);
+    if (err != entity::ERR_OK){
+        return {{}, err};
+    }
 
     return {suite, entity::ERR_OK};
 }

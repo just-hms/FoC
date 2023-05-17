@@ -13,7 +13,8 @@ namespace entity {
     constexpr Error ERR_TIMEOUT =           -2;
     constexpr Error ERR_BROKEN =            -3;
     constexpr Error ERR_MESSAGE_TOO_LONG =  -5;
-    constexpr size_t UNAME_MAX_LEN = 20;
+    constexpr size_t UNAME_MAX_LEN =        20;
+    constexpr size_t ACCEPTANCE_WINDOW =     5;
 
     struct Transaction{
         std::string from;
