@@ -46,8 +46,8 @@ namespace net {
 
     class IRouter{
     public:
-        virtual std::string Handle(int sd, std::string message);
-        virtual void Disconnect(int sd);
+        virtual std::string Handle(int sd, std::string message) = 0;
+        virtual void Disconnect(int sd) = 0;
     };
 
     struct ServerOption {

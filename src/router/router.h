@@ -35,10 +35,10 @@ namespace router {
 
     class IRepo{
     public:
-        virtual std::shared_ptr<entity::User> Login(std::string username, std::string password);
-        virtual int Balance(std::string USER_ID);
-        virtual bool Transfer(std::string USER_ID, std::string to, float amount);
-        virtual entity::History History(std::string USER_ID);
+        virtual std::shared_ptr<entity::User> Login(std::string username, std::string password) = 0;
+        virtual int Balance(std::string USER_ID) = 0;
+        virtual bool Transfer(std::string USER_ID, std::string to, float amount) = 0;
+        virtual entity::History History(std::string USER_ID) = 0;
     };
 
     class Router : public net::IRouter{

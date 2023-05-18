@@ -23,5 +23,5 @@ clean:
 
 test:			$(SOURCES)
 				$(CC) -o ./$(BUILD)/test ./test/test.cpp ./test/*_test.cpp $(SOURCES) $(FLAGS)
-				./build/test
+				@./build/test
 

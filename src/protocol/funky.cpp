@@ -12,10 +12,10 @@ protocol::FunkyProtocol::FunkyProtocol(){}
 std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol::FunkyProtocol::RightHandshake(int sd){
     std::shared_ptr<protocol::FunkySecuritySuite> suite;
 
-    //  1. Receive handshake message from client, build new AsymCrypt obj
+    //  1. Receive handshake message from client, build new AsymCrypt obj 
     auto [res, err1] = protocol::RawReceive(sd);
     if (err1 != entity::ERR_OK){
-        return {{}, err1};
+        return {nullptr, err1};
     }
 
     suite->asy = sec::AsymCrypt(
@@ -25,12 +25,12 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     );
 
     auto message = suite->asy.decrypt(res);
-    char username[entity::UNAME_MAX_LEN];
+    char username[entity::USERNAME_MAX_LEN];
     size_t timestamp;
-    sscanf((char*) message.data(), "%20s|%s\n", username, &timestamp);   //test overflow
+    sscanf((char*) message.data(), "%19s|%zu\n", username, &timestamp);   //test overflow
 
     auto ts = time(NULL);
-    if(timestamp > ts - entity::ACCEPTANCE_WINDOW) return {{}, err1};   //message has to be sent in the last ACCEPTANCE_WINDOW seconds
+    if(timestamp > ts - entity::ACCEPTANCE_WINDOW) return {nullptr, err1};   //message has to be sent in the last ACCEPTANCE_WINDOW seconds
 
     suite->asy.setPeerKey(std::string(username)+PUBK);  //missing initial path, should be provided when building FunkyProtocol obj
     
@@ -41,7 +41,7 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
 
     auto err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{}, err};
+        return {nullptr, err};
     }
 
     //  3. Generate and send to client the server's DH public key
@@ -51,16 +51,16 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
 
     err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{}, err};
+        return {nullptr, err};
     }
 
     // 4. Receive client's DH public key
-    auto [res, err1] = protocol::RawReceive(sd);
-    if (err1 != entity::ERR_OK){
-        return {{}, err1};
+    auto [res4, err4] = protocol::RawReceive(sd);
+    if (err4 != entity::ERR_OK){
+        return {nullptr, err4};
     }
 
-    auto encodedLeftDH = suite->asy.decrypt(res);
+    auto encodedLeftDH = suite->asy.decrypt(res4);
     auto leftDH = sec::decodePublicKey(encodedLeftDH);
 
     // 5. Derivate secret, generate key for SymCrypt
@@ -75,7 +75,7 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     out = suite->sym.encrypt(std::vector<uint8_t>(MACk, MACk + 16));
     err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{}, err};
+        return {nullptr, err};
     }
 
     //  7. MAC of the all session
@@ -87,12 +87,12 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     HSsession.insert(HSsession.end(), secret.begin(), secret.end());
 
     auto hashedSession = suite->mac.MAC(HSsession);
-    auto [res, err1] = protocol::RawReceive(sd);
-    if (err1 != entity::ERR_OK){
-        return {{}, err1};
+    auto [res7, err7] = protocol::RawReceive(sd);
+    if (err7 != entity::ERR_OK){
+        return {nullptr, err7};
     }
 
-    if(suite->sym.decrypt(res) != hashedSession) return {{}, err1};
+    if(suite->sym.decrypt(res) != hashedSession) return {nullptr, err1};
 
 
     return {suite, entity::ERR_OK};
@@ -121,13 +121,13 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
 
     auto err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{}, err};
+        return {nullptr, err};
     }
 
     // 2. Receive DH parameter
     auto [res, err1] = protocol::RawReceive(sd);
     if (err1 != entity::ERR_OK){
-        return {{}, err1};
+        return {nullptr, err1};
     }
 
     auto DH = suite->asy.decrypt(res);
@@ -136,7 +136,7 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     // 3. Receive rightDH key
     auto [re2, err2] = protocol::RawReceive(sd);
     if (err2 != entity::ERR_OK){
-        return {{}, err1};
+        return {nullptr, err1};
     }
 
     auto encodedRightDH = suite->asy.decrypt(res);
@@ -152,7 +152,7 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
 
     err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{}, err};
+        return {nullptr, err};
     }
 
     // 5. Derivate secret, generate key for SymCrypt
@@ -165,7 +165,7 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     // 6. Receive the key to be used in MAC 
     auto [res6, err6] = protocol::RawReceive(sd);
     if (err6 != entity::ERR_OK){
-        return {{}, err1};
+        return {nullptr, err1};
     }
 
     auto decryptedMacKey = suite->sym.decrypt(res6);
@@ -181,9 +181,9 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
 
     auto hashedSession = suite->mac.MAC(HSsession);
     out = suite->sym.encrypt(hashedSession);
-    auto err = protocol::RawSend(sd, out);
+    err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {{}, err};
+        return {nullptr, err};
     }
 
     return {suite, entity::ERR_OK};
