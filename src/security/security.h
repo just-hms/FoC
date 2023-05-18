@@ -60,8 +60,8 @@ namespace sec {
         sessionKey key;
 
         public:
+            SymCrypt();
             SymCrypt(sessionKey sessionKey);
-            void refresh(sessionKey newSessionKey);
             std::vector<uint8_t> encrypt(std::vector<uint8_t> plaintext);
             std::vector<uint8_t> decrypt(std::vector<uint8_t> ciphertext);
     };

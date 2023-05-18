@@ -108,14 +108,16 @@ int TestAES(){
     );
     ASSERT_TRUE(mess == res);
 
-    RAND_bytes(symk.key, SYMMLEN/8);
-    RAND_bytes(symk.iv, SYMMLEN/8);
-    SC.refresh(symk);
-
     res = SC.decrypt(
         SC.encrypt(mess)
     );
     ASSERT_TRUE(mess == res);
+
+    EVP_PKEY *dh, *pubs;
+    auto a = sec::genDHparam(dh);
+    sec::genDH(pubs, dh);
+    auto aaa = sec::encodePublicKey(pubs);
+    SC.encrypt(aaa);
 
     TEST_PASSED();
 }
@@ -151,4 +153,8 @@ int TestEncodeEVP_PKEY() {
     ASSERT_TRUE(sec::encodePublicKey(sec::decodePublicKey(sec::encodePublicKey(key))) == sec::encodePublicKey(key));
 
     TEST_PASSED();
+}
+
+int main() {
+    return TestAES();
 }

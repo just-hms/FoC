@@ -28,8 +28,6 @@ void sec::AsymCrypt::setPeerKey(std::string pubk_file) {
 //encrypts mes using userID's public key
 std::vector<uint8_t> sec::AsymCrypt::encrypt(std::vector<uint8_t> mess) {
 
-    auto res = std::vector<uint8_t>();
-
     EVP_PKEY_CTX *ctx;
     EVP_PKEY *key;
     size_t ctlen;
@@ -53,64 +51,47 @@ std::vector<uint8_t> sec::AsymCrypt::encrypt(std::vector<uint8_t> mess) {
     }
     fclose(fp);
     
-    for (int i = 0; i < mess.size() / MAX_ENCRYPTION_LEN + 1;  i++) {
+    if(!(ctx = EVP_PKEY_CTX_new(key, NULL))) {
+        std::cerr<<"Unable to create a contextfor AsymCrypt"<<std::endl;
+        EVP_PKEY_free(key);
+        return {};
+    }
 
-        // TODO refactor
-        std::vector<uint8_t> mess_chunk;
-
-        if ((i+1) * MAX_ENCRYPTION_LEN > mess.size() ){
-            mess_chunk =  std::vector<uint8_t>(mess.begin() + i * MAX_ENCRYPTION_LEN , mess.end());        
-        }
-        else{
-            mess_chunk =  std::vector<uint8_t>(mess.begin() + i * MAX_ENCRYPTION_LEN, mess.begin() + (i+1) * MAX_ENCRYPTION_LEN);
-        }
-
-        if(!(ctx = EVP_PKEY_CTX_new(key, NULL))) {
-            std::cerr<<"Unable to create a contextfor AsymCrypt"<<std::endl;
-            EVP_PKEY_free(key);
-            return {};
-        }
-
-        if(EVP_PKEY_encrypt_init(ctx) <= 0) {
-            std::cerr<<"Unable to initialize context for AsymCrypt"<<std::endl;
-            EVP_PKEY_CTX_free(ctx);
-            EVP_PKEY_free(key);
-            return {};
-        }
-
-        if(EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
-            std::cerr<<"Unable to set padding for AsymCrypt"<<std::endl;
-            EVP_PKEY_CTX_free(ctx);
-            EVP_PKEY_free(key);
-            return {};
-        }
-
-        //determine output buffer length
-        if(EVP_PKEY_encrypt(ctx, NULL, &ctlen, mess_chunk.data(), mess_chunk.size()) <= 0) {
-            std::cout<<"Unable to determine ct buffer length"<<std::endl;
-            EVP_PKEY_CTX_free(ctx);
-            EVP_PKEY_free(key);
-            return {};
-        }
-        
-        ct.resize(ctlen);
-
-        std::cout << ctlen << std::endl;
-        
-        if(EVP_PKEY_encrypt(ctx, ct.data(), &ctlen, mess_chunk.data(), mess_chunk.size()) <= 0) {
-            std::cerr<<"Error during AsymCrypt encryption"<<std::endl;
-            EVP_PKEY_CTX_free(ctx);
-            EVP_PKEY_free(key);
-            return {};
-        }
-
+    if(EVP_PKEY_encrypt_init(ctx) <= 0) {
+        std::cerr<<"Unable to initialize context for AsymCrypt"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
         EVP_PKEY_free(key);
+        return {};
+    }
 
-        res.insert(res.end(), ct.begin(), ct.end());
-    } 
+    if(EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
+        std::cerr<<"Unable to set padding for AsymCrypt"<<std::endl;
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(key);
+        return {};
+    }
 
-    return res;
+    //determine output buffer length
+    if(EVP_PKEY_encrypt(ctx, NULL, &ctlen, mess.data(), mess.size()) <= 0) {
+        std::cout<<"Unable to determine ct buffer length"<<std::endl;
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(key);
+        return {};
+    }
+    
+    ct.resize(ctlen);
+    
+    if(EVP_PKEY_encrypt(ctx, ct.data(), &ctlen, mess.data(), mess.size()) <= 0) {
+        std::cerr<<"Error during AsymCrypt encryption"<<std::endl;
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(key);
+        return {};
+    }
+
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(key);
+
+    return ct;
 }
 
 //decrypts mess using the server's private key

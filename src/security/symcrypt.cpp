@@ -1,11 +1,11 @@
 #include "security.h"
 
-sec::SymCrypt::SymCrypt(sec::sessionKey k) {
-    this->refresh(k);
+sec::SymCrypt::SymCrypt() {
+    RAND_bytes(this->key.key, SYMMLEN/8);
+    RAND_bytes(this->key.iv, 16);
 }
 
-//creates (or updates if already exists) a new key and iv to communicate with userID
-void sec::SymCrypt::refresh(sec::sessionKey k) {
+sec::SymCrypt::SymCrypt(sec::sessionKey k) {
     this->key = k;
 }
 

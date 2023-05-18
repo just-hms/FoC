@@ -15,6 +15,10 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::cout<< "0 [server]" << std::endl;
 
     FunkySecuritySuite suite;
+    sec::sessionKey sk;
+    RAND_bytes(sk.key, SYMMLEN/8);
+    RAND_bytes(sk.iv, 16);
+    sec::SymCrypt symTMP(sk);
 
     //  1. Receive handshake message from client, build new AsymCrypt obj 
 
@@ -28,7 +32,6 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
         "", 
         "secret"
     );
-
 
     auto message = asy.decrypt(res);
     char username[entity::USERNAME_MAX_LEN];
@@ -45,9 +48,20 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     //  2. Generate and send to client DH parameters
     std::cout<< "2 [server]" << std::endl;
 
+    std::vector<uint8_t> aesTMP(32+16);
+    memcpy(aesTMP.data(), &(sk.key)[0], SYMMLEN/8);
+    memcpy(aesTMP.data()+32, &(sk.iv)[0], 16);
+
+    auto out = asy.encrypt(aesTMP);
+
+    auto err = protocol::RawSend(sd, out);
+    if (err != entity::ERR_OK){
+        return {FunkySecuritySuite{}, err};
+    }
+
     EVP_PKEY *paramsDH = nullptr, *rightDH = nullptr;
     auto DH = sec::genDHparam(paramsDH);
-    auto out = asy.encrypt(DH);
+    out = symTMP.encrypt(DH);
 
     auto err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
