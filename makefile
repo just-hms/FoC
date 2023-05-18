@@ -22,6 +22,8 @@ clean:
 				rm -v ./$(BUILD)/*
 
 test:			$(SOURCES)
+				@echo building tests...
 				$(CC) -o ./$(BUILD)/test ./test/test.cpp ./test/*_test.cpp $(SOURCES) $(FLAGS)
+				@echo running tests...
 				@./build/test
 

@@ -2,8 +2,8 @@
 
 int main(){
     return
-        TestFunkyPingPong();
-    // TestRawPingPong()   || 
+    // TestRawPingPong(); 
+    TestFunkyPingPong();
     // TestDH()            ||
     // TestRSA()           ||
     // TestAES()           ||

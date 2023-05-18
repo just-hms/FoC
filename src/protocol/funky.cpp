@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <ctime>
+#include <memory>
 #include <span>
 #include <string>
 #include <utility>
@@ -9,76 +10,96 @@
 
 protocol::FunkyProtocol::FunkyProtocol(){}
 
-std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol::FunkyProtocol::RightHandshake(int sd){
-    std::shared_ptr<protocol::FunkySecuritySuite> suite;
+std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::RightHandshake(int sd){
+
+    std::cout<< "0 [server]" << std::endl;
+
+    FunkySecuritySuite suite;
 
     //  1. Receive handshake message from client, build new AsymCrypt obj 
+
     auto [res, err1] = protocol::RawReceive(sd);
     if (err1 != entity::ERR_OK){
-        return {nullptr, err1};
+        return {FunkySecuritySuite{}, err1};
     }
 
-    suite->asy = sec::AsymCrypt(
-        "~/repos/FoC/server_privk.pem", 
+    auto asy = sec::AsymCrypt(
+        "/home/just-hms/repos/alive/FoC/data/serverprivk.pem", 
         "", 
         "secret"
     );
 
-    auto message = suite->asy.decrypt(res);
+
+    auto message = asy.decrypt(res);
     char username[entity::USERNAME_MAX_LEN];
     size_t timestamp;
-    sscanf((char*) message.data(), "%19s|%zu\n", username, &timestamp);   //test overflow
+    sscanf((char*) message.data(), "%19s %zu\n", username, &timestamp);   //test overflow
 
     auto ts = time(NULL);
-    if(timestamp > ts - entity::ACCEPTANCE_WINDOW) return {nullptr, err1};   //message has to be sent in the last ACCEPTANCE_WINDOW seconds
+    if(!(timestamp > ts - entity::ACCEPTANCE_WINDOW)) return {FunkySecuritySuite{}, err1};   //message has to be sent in the last ACCEPTANCE_WINDOW seconds
 
-    suite->asy.setPeerKey(std::string(username)+PUBK);  //missing initial path, should be provided when building FunkyProtocol obj
+    std::cout<< "1 [server]" << std::endl;
+
+    asy.setPeerKey(std::string("/home/just-hms/repos/alive/FoC/data/") + std::string(username)+PUBK);  //missing initial path, should be provided when building FunkyProtocol obj
     
     //  2. Generate and send to client DH parameters
+    std::cout<< "2 [server]" << std::endl;
+
     EVP_PKEY *paramsDH = nullptr, *rightDH = nullptr;
     auto DH = sec::genDHparam(paramsDH);
-    auto out = suite->asy.encrypt(DH);
+    auto out = asy.encrypt(DH);
 
     auto err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {nullptr, err};
+        return {FunkySecuritySuite{}, err};
     }
 
     //  3. Generate and send to client the server's DH public key
+    std::cout<< "3 [server]" << std::endl;
+
     sec::genDH(rightDH, paramsDH);
     auto encodedRightDH = sec::encodePublicKey(rightDH);
-    out = suite->asy.encrypt(encodedRightDH);
+    out = asy.encrypt(encodedRightDH);
 
     err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {nullptr, err};
+        return {FunkySecuritySuite{}, err};
     }
 
     // 4. Receive client's DH public key
+    std::cout<< "4 [server]" << std::endl;
+
     auto [res4, err4] = protocol::RawReceive(sd);
     if (err4 != entity::ERR_OK){
-        return {nullptr, err4};
+        return {FunkySecuritySuite{}, err4};
     }
 
-    auto encodedLeftDH = suite->asy.decrypt(res4);
+    auto encodedLeftDH = asy.decrypt(res4);
     auto leftDH = sec::decodePublicKey(encodedLeftDH);
 
     // 5. Derivate secret, generate key for SymCrypt
+    std::cout<< "5 [server]" << std::endl;
+
     auto secret = sec::derivateDH(rightDH, leftDH);
     auto key = sec::keyFromSecret(secret);
 
-    suite->sym = sec::SymCrypt(key);
+    auto sym = sec::SymCrypt(key);
+    suite.sym = &sym;
 
     //  6. Creation and delivery of MAC symmetric key
-    suite->mac = sec::Hmac();
-    unsigned char *MACk = suite->mac.getKey();
-    out = suite->sym.encrypt(std::vector<uint8_t>(MACk, MACk + 16));
+    std::cout<< "6 [server]" << std::endl;
+    
+    auto mac = sec::Hmac();
+    unsigned char *MACk = suite.mac->getKey();
+    out = suite.sym->encrypt(std::vector<uint8_t>(MACk, MACk + 16));
     err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {nullptr, err};
+        return {FunkySecuritySuite{}, err};
     }
 
     //  7. MAC of the all session
+    std::cout<< "7 [server]" << std::endl;
+    
     std::vector<uint8_t> HSsession;
     HSsession.insert(HSsession.end(), message.begin(), message.end());
     HSsession.insert(HSsession.end(), DH.begin(), DH.end());
@@ -86,92 +107,109 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     HSsession.insert(HSsession.end(), encodedLeftDH.begin(), encodedLeftDH.end());
     HSsession.insert(HSsession.end(), secret.begin(), secret.end());
 
-    auto hashedSession = suite->mac.MAC(HSsession);
+    auto hashedSession = suite.mac->MAC(HSsession);
     auto [res7, err7] = protocol::RawReceive(sd);
     if (err7 != entity::ERR_OK){
-        return {nullptr, err7};
+        return {FunkySecuritySuite{}, err7};
     }
 
-    if(suite->sym.decrypt(res) != hashedSession) return {nullptr, err1};
+    if(suite.sym->decrypt(res) != hashedSession) return {FunkySecuritySuite{}, err1};
 
 
     return {suite, entity::ERR_OK};
 }
 
 
-std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol::FunkyProtocol::LeftHandshake(int sd){
-    std::shared_ptr<protocol::FunkySecuritySuite> suite;
+std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::LeftHandshake(int sd){
+    std::cout<< "0 [client]" << std::endl;
 
-    std::string name = "kek";
+    FunkySecuritySuite suite;
+
+    std::string name = "client";
+
 
     // TODO add some way to get the file
-    suite->asy = sec::AsymCrypt(
-        "~/repos/FoC/client_privk.pem", 
-        "~/repos/FoC/server_pubk.pem", 
+    auto asy = sec::AsymCrypt(
+        "/home/just-hms/repos/alive/FoC/data/clientprivk.pem", 
+        "/home/just-hms/repos/alive/FoC/data/serverpubk.pem", 
         "secret"
     );
 
     // 1. Send a message with the username and the current time encryted with RSA
+    std::cout<< "1 [client]" << std::endl;
     auto now = time(NULL);
-    auto message = name + "|" + std::to_string(now);
+    auto message = name + " " + std::to_string(now);
 
-    auto out = suite->asy.encrypt(
+    auto out = asy.encrypt(
         std::vector<uint8_t>(message.begin(), message.end())
     );
 
     auto err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {nullptr, err};
+        return {FunkySecuritySuite{}, err};
     }
 
     // 2. Receive DH parameter
+    std::cout<< "2 [client]" << std::endl;
+
     auto [res, err1] = protocol::RawReceive(sd);
     if (err1 != entity::ERR_OK){
-        return {nullptr, err1};
+        return {FunkySecuritySuite{}, err1};
     }
 
-    auto DH = suite->asy.decrypt(res);
+    auto DH = asy.decrypt(res);
     auto paramsDH = sec::retrieveDHparam(DH);
 
     // 3. Receive rightDH key
+    std::cout<< "3 [client]" << std::endl;
+
     auto [re2, err2] = protocol::RawReceive(sd);
     if (err2 != entity::ERR_OK){
-        return {nullptr, err1};
+        return {FunkySecuritySuite{}, err1};
     }
 
-    auto encodedRightDH = suite->asy.decrypt(res);
+    auto encodedRightDH = asy.decrypt(res);
     auto rightDH = sec::decodePublicKey(encodedRightDH);
 
     // 4. Send leftDH key
+    std::cout<< "4 [client]" << std::endl;
+
     EVP_PKEY *leftDH = nullptr;
     
     sec::genDH(leftDH, paramsDH);
 
     auto encodedLeftDH = sec::encodePublicKey(leftDH);
-    out = suite->asy.encrypt(encodedLeftDH);
+    out = asy.encrypt(encodedLeftDH);
 
     err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {nullptr, err};
+        return {FunkySecuritySuite{}, err};
     }
 
     // 5. Derivate secret, generate key for SymCrypt
+    std::cout<< "5 [client]" << std::endl;
+
     auto secret = sec::derivateDH(leftDH, rightDH);
     auto key = sec::keyFromSecret(secret);
 
-    suite->sym = sec::SymCrypt(key);
+    auto sym = sec::SymCrypt(key);
 
 
     // 6. Receive the key to be used in MAC 
+    std::cout<< "6 [client]" << std::endl;
+
     auto [res6, err6] = protocol::RawReceive(sd);
     if (err6 != entity::ERR_OK){
-        return {nullptr, err1};
+        return {FunkySecuritySuite{}, err1};
     }
 
-    auto decryptedMacKey = suite->sym.decrypt(res6);
-    suite->mac = sec::Hmac(decryptedMacKey);
-    
+    auto decryptedMacKey = suite.sym->decrypt(res6);
+    auto mac = sec::Hmac(decryptedMacKey);
+
+    suite.mac = &mac;
     //  7. MAC of all the session
+    std::cout<< "7 [client]" << std::endl;
+
     std::vector<uint8_t> HSsession;
     HSsession.insert(HSsession.end(), message.begin(), message.end());
     HSsession.insert(HSsession.end(), DH.begin(), DH.end());
@@ -179,11 +217,11 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
     HSsession.insert(HSsession.end(), encodedLeftDH.begin(), encodedLeftDH.end());
     HSsession.insert(HSsession.end(), secret.begin(), secret.end());
 
-    auto hashedSession = suite->mac.MAC(HSsession);
-    out = suite->sym.encrypt(hashedSession);
+    auto hashedSession = suite.mac->MAC(HSsession);
+    out = suite.sym->encrypt(hashedSession);
     err = protocol::RawSend(sd, out);
     if (err != entity::ERR_OK){
-        return {nullptr, err};
+        return {FunkySecuritySuite{}, err};
     }
 
     return {suite, entity::ERR_OK};
@@ -191,7 +229,7 @@ std::tuple<std::shared_ptr<protocol::FunkySecuritySuite>,entity::Error> protocol
 
 entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
     
-    std::shared_ptr<protocol::FunkySecuritySuite> secSuite = nullptr;
+    FunkySecuritySuite secSuite;
     
     auto it = this->sessions.find(sd);
     // if exists set it
@@ -206,12 +244,12 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
     }
 
     //  encrypt using session key
-    auto out = secSuite->sym.encrypt(
+    auto out = secSuite.sym->encrypt(
         std::vector<uint8_t>(message.begin(), message.end())
     );
 
     // generating hash for integrity
-    auto mac = secSuite->mac.MAC(out);
+    auto mac = secSuite.mac->MAC(out);
     
     // add hash to the message
     out.insert(out.end(), mac.begin(), mac.end());
@@ -225,7 +263,7 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
 
 std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
 
-    std::shared_ptr<protocol::FunkySecuritySuite> secSuite = nullptr;
+    FunkySecuritySuite secSuite;
     
     auto it = this->sessions.find(sd);
     // if exists set it

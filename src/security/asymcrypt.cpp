@@ -25,6 +25,7 @@ void sec::AsymCrypt::setPeerKey(std::string pubk_file) {
 
 //encrypts mes using userID's public key
 std::vector<uint8_t> sec::AsymCrypt::encrypt(std::vector<uint8_t> mess) {
+
     EVP_PKEY_CTX *ctx;
     EVP_PKEY *key;
     size_t ctlen;
@@ -37,7 +38,7 @@ std::vector<uint8_t> sec::AsymCrypt::encrypt(std::vector<uint8_t> mess) {
 
     FILE *fp = fopen((this->pubk).c_str(), "r");
     if(fp == NULL) {
-        std::cerr<<"Couldn't open AsymCrypt private key file"<<std::endl;
+        std::cerr<<"Couldn't open AsymCrypt public key file "<<(this->pubk).c_str() << std::endl;
         return {};
     }
     key = PEM_read_PUBKEY(fp, NULL, NULL, NULL);
@@ -77,6 +78,8 @@ std::vector<uint8_t> sec::AsymCrypt::encrypt(std::vector<uint8_t> mess) {
     }
     ct.resize(ctlen);
 
+    std::cout << ctlen << std::endl;
+     
     if(EVP_PKEY_encrypt(ctx, ct.data(), &ctlen, mess.data(), mess.size()) <= 0) {
         std::cerr<<"Error during AsymCrypt encryption"<<std::endl;
         EVP_PKEY_CTX_free(ctx);

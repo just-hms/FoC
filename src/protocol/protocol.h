@@ -27,22 +27,21 @@ namespace protocol {
 
     struct FunkySecuritySuite {
         // std::string username;
-        sec::SymCrypt sym;
-        sec::Hmac mac;
-        sec::AsymCrypt asy;
+        sec::SymCrypt *sym;
+        sec::Hmac *mac;
     };
 
     // FunkyProtocol implements the IProtocol sending encrypted data
     class FunkyProtocol : public net::IProtocol {
     private:    
 
-        std::unordered_map<int, std::shared_ptr<FunkySecuritySuite>> sessions;
+        std::unordered_map<int, FunkySecuritySuite> sessions;
         
         // lazy handshakes
         //  - this function are called silently inside the Send and Receive
         //  - the handshake starts if no sessions_key is currently available
-        std::tuple<std::shared_ptr<FunkySecuritySuite>,entity::Error> LeftHandshake(int sd);
-        std::tuple<std::shared_ptr<FunkySecuritySuite>,entity::Error> RightHandshake(int sd);
+        std::tuple<FunkySecuritySuite,entity::Error> LeftHandshake(int sd);
+        std::tuple<FunkySecuritySuite,entity::Error> RightHandshake(int sd);
 
     public:
         // TODO: edit constructor to accept cfg
