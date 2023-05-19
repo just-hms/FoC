@@ -11,7 +11,7 @@
 int main() {
     config::Config cfg;
 
-    protocol::RawProtocol p;
+    protocol::FunkyProtocol p;
     repo::MockRepo repo;
     router::Router router(&repo);
     

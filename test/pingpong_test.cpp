@@ -54,7 +54,7 @@ int TestFunkyPingPong() {
     // create the client
     net::ClientOption client_opt{
         .server_ip = "127.0.0.1",
-        .port = cfg.ServerPort,
+        .port = cfg.ServerPort + 1,
         .proto = &p,
         .timeout = 200,
     };
@@ -62,7 +62,7 @@ int TestFunkyPingPong() {
 
     // create the server
     net::ServerOption server_opt{
-        .port = cfg.ServerPort,
+        .port = cfg.ServerPort + 1,
         .proto = &p,
         .router = &router
     };
@@ -78,15 +78,17 @@ int TestFunkyPingPong() {
     
     c.Connect();
     auto [res, err] = c.Request("ping");
+    ASSERT_EQUAL("pong", res);
+
+    auto [res2, err2] = c.Request("ping");
+    ASSERT_EQUAL("pong", res2);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
     // stop the server
     s.Stop();
     server_thread.join();
 
     // check the response
-    ASSERT_EQUAL("pong", res);
     ASSERT_EQUAL(entity::ERR_OK, err);
 
     TEST_PASSED();
