@@ -25,7 +25,9 @@ std::tuple<std::vector<uint8_t>,entity::Error> protocol::RawReceive(int sd) noex
             std::vector<uint8_t>(), 
             entity::StatusCodeFromCSocketErrorCodes(res)
         };
-    }
+    }   
+
+    // TODO: also always send [len|hash(len|message)] with fixed lenght
 
 	auto len = ntohl(web_len);
 

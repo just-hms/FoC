@@ -1,6 +1,7 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
+#include <memory>
 #include <string>
 #include <span>
 #include <tuple>
@@ -27,8 +28,8 @@ namespace protocol {
 
     struct FunkySecuritySuite {
         // std::string username;
-        sec::SymCrypt *sym;
-        sec::Hmac *mac;
+        std::shared_ptr<sec::SymCrypt> sym;
+        std::shared_ptr<sec::Hmac> mac;
     };
 
     // FunkyProtocol implements the IProtocol sending encrypted data

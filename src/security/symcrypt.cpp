@@ -54,17 +54,18 @@ std::vector<uint8_t> sec::SymCrypt::decrypt(std::vector<uint8_t> ct) {
     EVP_CIPHER_CTX *ctx;
     int ptlen, len;
     std::vector<uint8_t> pt;
+    std::cout << "lolz" << std::endl;
 
     if(!(ctx = EVP_CIPHER_CTX_new())) {
         std::cerr<<"Unable to create a context for SymCrypt"<<std::endl;
         return {};
-    }
+    }std::cout << "lolz" << std::endl;
 
     if(EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, this->key.key, this->key.iv) <= 0) {
         std::cerr<<"Unable to initialize a context for SymCrypt"<<std::endl;
         EVP_CIPHER_CTX_free(ctx);
         return {};
-    }
+    }std::cout << "lolz" << std::endl;
 
     pt.resize(ct.size());
 

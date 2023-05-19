@@ -9,7 +9,8 @@
 #include <vector>
 
 //TO DELETE
-#define REL_PATH "/home/frank/FoC/data/"
+// #define REL_PATH "/home/frank/FoC/data/"
+#define REL_PATH "./data/"
 
 protocol::FunkyProtocol::FunkyProtocol(){}
 
@@ -102,15 +103,14 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     auto secret = sec::derivateDH(rightDH, leftDH);
     auto key = sec::keyFromSecret(secret);
 
-    auto sym = sec::SymCrypt(key);
-    suite.sym = &sym;
+    suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key));
 
     //  7. Creation and delivery of MAC symmetric key
     std::cout<< "7 [server]" << std::endl;
     
-    auto mac = sec::Hmac();
-    suite.mac = &mac;
-    auto MACk = mac.getKey();
+    suite.mac = std::make_shared<sec::Hmac>(sec::Hmac());
+
+    auto MACk = suite.mac->getKey();
 
     out = suite.sym->encrypt(MACk);
     err = protocol::RawSend(sd, out);
@@ -230,8 +230,7 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     auto secret = sec::derivateDH(leftDH, rightDH);
     auto key = sec::keyFromSecret(secret);
 
-    auto sym = sec::SymCrypt(key);
-    suite.sym = &sym;
+    suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key));
 
     // 7. Receive the key to be used in MAC 
     std::cout<< "7 [client]" << std::endl;
@@ -243,8 +242,8 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     
     auto decryptedMacKey = suite.sym->decrypt(res6);
     decryptedMacKey.resize(16);
-    auto mac = sec::Hmac(decryptedMacKey);
-    suite.mac = &mac;
+    
+    suite.mac = std::make_shared<sec::Hmac>(sec::Hmac());
 
     //  8. MAC of all the session
     std::cout<< "8 [client]" << std::endl;
@@ -263,6 +262,9 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
         return {FunkySecuritySuite{}, err};
     }
 
+
+    std::cout << sec::encode((char*)key.key, 32)<< std::endl;
+
     return {suite, entity::ERR_OK};
 }
 
@@ -274,6 +276,8 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
     // if exists set it
     if (it == this->sessions.end()){
         auto [res, err] = this->LeftHandshake(sd);
+        sessions[sd] = res;
+        
         if (err != entity::ERR_OK){
             return err;
         }
@@ -292,7 +296,6 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
     
     // add hash to the message
     out.insert(out.end(), mac.begin(), mac.end());
-
     // call rawsend
     return protocol::RawSend(
         sd, 
@@ -308,6 +311,8 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
     // if exists set it
     if (it == this->sessions.end()){
         auto [res, err] = this->RightHandshake(sd);
+        sessions[sd] = res;
+
         if (err != entity::ERR_OK){
             return {"", err};
         }
@@ -326,11 +331,24 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
     }
 
     //  extract hash and check for integrity
-
+    // TODO remove hardcoded mac lenght
+    auto expectedMac = std::vector<uint8_t>(res.end()-64 , res.end());
+    auto encrypted = std::vector<uint8_t>(res.begin(), res.end()-64);
     //  decrypt using session key
 
+   //auto mac = secSuite.mac->MAC(encrypted);
+
+   //if (expectedMac != mac){
+   //    return {
+   //        "",
+   //        entity::ERR_BROKEN
+   //    };    
+   //}
+std::cout << sec::encode((char*)encrypted.data(), encrypted.size())<< std::endl;
+
+    auto mess = secSuite.sym->decrypt(encrypted);
     return {
-        "",
+        std::string(mess.begin(), mess.end()),
         entity::ERR_BROKEN
     };
 }
