@@ -154,7 +154,3 @@ int TestEncodeEVP_PKEY() {
 
     TEST_PASSED();
 }
-
-int main() {
-    return TestAES();
-}

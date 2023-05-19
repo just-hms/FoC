@@ -80,7 +80,7 @@ namespace sec {
         public:
             Hmac();
             Hmac(std::vector<uint8_t> key);
-            unsigned char* getKey();
+            std::vector<uint8_t> getKey();
             std::vector<uint8_t> MAC(std::vector<uint8_t> data);
     };
 

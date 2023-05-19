@@ -69,27 +69,20 @@ std::vector<uint8_t> sec::SymCrypt::decrypt(std::vector<uint8_t> ct) {
     pt.resize(ct.size());
 
     if(EVP_DecryptUpdate(ctx, pt.data(), &len, ct.data(), ct.size()) <= 0) {
-        std::cerr<<"Unable to decrypt with SymCrypt"<<std::endl;
+        std::cerr<<"Unable to update decrypt with SymCrypt"<<std::endl;
         EVP_CIPHER_CTX_free(ctx);
         return {};
     }
     ptlen = len;
 
     if(EVP_DecryptFinal_ex(ctx, pt.data() + len, &len) <= 0) {
-        std::cerr<<"Unable to decrypt with SymCrypt"<<std::endl;
+        std::cerr<<"Unable to finalize decrypt with SymCrypt"<<std::endl;
         EVP_CIPHER_CTX_free(ctx);
         return {};
     }
     ptlen += len;
 
     EVP_CIPHER_CTX_free(ctx);
-
-    for(int i = 0; i < pt.size(); i++) {
-        if(pt[i] == '\0') {
-            pt.resize(i);
-            break;
-        }
-    }
 
     return pt;
 }
