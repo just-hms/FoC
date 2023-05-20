@@ -8,15 +8,12 @@ FLAGS=-lcrypto -ljsoncpp -g -std=c++2a -w
 build: 			build_server build_client
 
 build_server: 	$(SOURCES)
+				@echo building server...				
 				@$(CC) -o ./$(BUILD)/server ./src/cmd/server.cpp $(SOURCES) $(FLAGS)
 
 build_client: 	$(SOURCES)
+				@echo building client...				
 				@$(CC) -o ./$(BUILD)/client ./src/cmd/client.cpp $(SOURCES) $(FLAGS)
-
-run:
-				@./$(BUILD)/server &
-				@./$(BUILD)/client
-				@pkill -f "./$(BUILD)/server"
 
 clean:
 				rm -v ./$(BUILD)/*

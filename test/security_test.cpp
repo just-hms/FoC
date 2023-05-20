@@ -4,7 +4,6 @@
 
 std::vector<uint8_t> mess = {'m', 'e', 's', 's', 'a', 'g', 'e'};
 
-#define DATA_PATH std::string("./data/")
 
 int TestDH(){
     //parameter generation, key generation and derivation
@@ -99,7 +98,7 @@ int TestRSA(){
 int TestAES(){
 
     sec::sessionKey symk;
-    RAND_bytes(symk.key, SYMMLEN/8);
+    RAND_bytes(symk.key, sec::SYMMLEN/8);
     RAND_bytes(symk.iv, 16);
 
     sec::SymCrypt SC(symk);

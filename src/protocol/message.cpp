@@ -14,8 +14,8 @@
 #include <span>
 
 // TODO: get MAX_MESSAGE_SIZE from config
-#define MAX_MESSAGE_SIZE 4096
-#define MAX_CHUNK_SIZE 1024
+constexpr int MAX_MESSAGE_SIZE =    4096;
+constexpr int MAX_CHUNK_SIZE =      1024;
 
 std::tuple<std::vector<uint8_t>,entity::Error> protocol::RawReceive(int sd) noexcept {
     

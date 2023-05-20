@@ -16,11 +16,12 @@
 
 namespace sec {
 
-    #define SYMMLEN 256
-    #define SALT_LEN 16
-    #define HMAC_KEY_LEN 16
-    #define PUBK "pubk.pem"
-    #define PRIVK "privk.pem"
+    constexpr int SYMMLEN =          256;
+    constexpr int SALT_LEN =         16;
+    constexpr int HMAC_KEY_LEN =     16;
+    constexpr int MAC_LEN =          64;
+    constexpr char const* PUBK =     "pubk.pem";
+    constexpr char const* PRIVK =    "privk.pem";
 
     // ASYMCRYPT
     /*EXAMPLE

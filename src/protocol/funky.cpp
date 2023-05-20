@@ -8,14 +8,14 @@
 #include <utility>
 #include <vector>
 
-// TODO delete this
-// #define REL_PATH "/home/frank/FoC/data/"
-#define REL_PATH "./data/"
-
-
 // TODO add a disconnect hook also for the protocols
 
-protocol::FunkyProtocol::FunkyProtocol(){}
+protocol::FunkyProtocol::FunkyProtocol(protocol::FunkyOptions * opt){
+    this->name = opt->name;
+    this->peerName = opt->peerName;
+    this->dataPath = opt->dataPath;
+    this->secret = opt->secret;
+}
 
 std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::RightHandshake(int sd){
 
@@ -29,31 +29,37 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     }
 
     auto asy = sec::AsymCrypt(
-        REL_PATH+std::string("serverprivk.pem"), 
+        this->dataPath+std::string(this->name +"privk.pem"), 
         "", 
-        "secret"
+        this->secret
     );
 
     auto message = asy.decrypt(res);
 
     char username[entity::USERNAME_MAX_LEN];
     size_t timestamp;
-    sscanf((char*) message.data(), "%19s %zu\n", username, &timestamp);   //test overflow
+
+    // TODO test overflow
+    sscanf((char*) message.data(), "%19s %zu\n", username, &timestamp); 
 
     auto ts = time(NULL);
-    if(!(timestamp > ts - entity::ACCEPTANCE_WINDOW)) return {FunkySecuritySuite{}, entity::ERR_BROKEN};   //message has to be sent in the last ACCEPTANCE_WINDOW seconds
+    //message has to be sent in the last ACCEPTANCE_WINDOW seconds
 
-    asy.setPeerKey(REL_PATH + std::string(username)+PUBK);
+    if(!(timestamp > ts - entity::ACCEPTANCE_WINDOW)) {
+        return {FunkySecuritySuite{}, entity::ERR_BROKEN};  
+    }
+
+    asy.setPeerKey(this->dataPath + std::string(username)+sec::PUBK);
 
     //  2. Generate and send to client a temporary symmetric key
 
     sec::sessionKey sk;
-    RAND_bytes(sk.key, SYMMLEN/8);
+    RAND_bytes(sk.key, sec::SYMMLEN/8);
     RAND_bytes(sk.iv, 16);
     sec::SymCrypt symTMP(sk);
-    std::vector<uint8_t> aesTMP(SYMMLEN/8+16);
-    memcpy(aesTMP.data(), &(sk.key)[0], SYMMLEN/8);
-    memcpy(aesTMP.data() + SYMMLEN/8, &(sk.iv)[0], 16);
+    std::vector<uint8_t> aesTMP(sec::SYMMLEN/8+16);
+    memcpy(aesTMP.data(), &(sk.key)[0], sec::SYMMLEN/8);
+    memcpy(aesTMP.data() + sec::SYMMLEN/8, &(sk.iv)[0], 16);
 
     auto out = asy.encrypt(aesTMP);
 
@@ -142,18 +148,15 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
 
     FunkySecuritySuite suite;
 
-    std::string name = "client";
-
-    // TODO add some way to get the file
     auto asy = sec::AsymCrypt(
-        REL_PATH+std::string("clientprivk.pem"), 
-        REL_PATH+std::string("serverpubk.pem"), 
-        "secret"
+        this->dataPath+std::string(this->name + "privk.pem"), 
+        this->dataPath+std::string(this->peerName +"pubk.pem"), 
+        this->secret
     );
 
     // 1. Send a message with the username and the current time encryted with RSA
     auto now = time(NULL);
-    auto message = name + " " + std::to_string(now);
+    auto message = this->name + " " + std::to_string(now);
 
     auto out = asy.encrypt(
         std::vector<uint8_t>(message.begin(), message.end())
@@ -172,8 +175,8 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
 
     auto encodedSK = asy.decrypt(res);
     sec::sessionKey sk;
-    memcpy(&(sk.key)[0], encodedSK.data(), SYMMLEN/8);
-    memcpy(&(sk.iv)[0], encodedSK.data()+SYMMLEN/8, 16);
+    memcpy(&(sk.key)[0], encodedSK.data(), sec::SYMMLEN/8);
+    memcpy(&(sk.iv)[0], encodedSK.data()+sec::SYMMLEN/8, 16);
 
     sec::SymCrypt symTMP(sk);
 
@@ -267,10 +270,9 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
         std::vector<uint8_t>(message.begin(), message.end())
     );
 
-    // TODO; re add this back
-    // // generating hash for integrity
+    // generating hash for integrity
     auto mac = secSuite.mac->MAC(out);
-    // // add hash to the message
+    // add hash to the message
     out.insert(out.end(), mac.begin(), mac.end());
     // call rawsend
     return protocol::RawSend(sd, out);
@@ -302,9 +304,8 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
     }
 
     //  extract hash and check for integrity
-    // TODO remove hardcoded mac length
-    auto expectedMac = std::vector<uint8_t>(res.end()-64 , res.end());
-    auto encrypted = std::vector<uint8_t>(res.begin(), res.end()-64);
+    auto expectedMac = std::vector<uint8_t>(res.end()-sec::MAC_LEN , res.end());
+    auto encrypted = std::vector<uint8_t>(res.begin(), res.end()-sec::MAC_LEN);
     //  decrypt using session key
 
     auto mac = secSuite.mac->MAC(encrypted);

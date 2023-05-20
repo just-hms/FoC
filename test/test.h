@@ -11,6 +11,8 @@
 #include "./../src/protocol/protocol.h"
 #include "./../src/repo/repo.h"
 
+#define DATA_PATH std::string("./data/")
+
 #define ASSERT_EQUAL(expected, actual) \
     if ((expected) != (actual)) { \
         std::cerr << "\033[31m" << __FUNCTION__ << " expected: " << (expected) << " got: " << (actual) << " at line " << __LINE__ << "\033[0m" << std::endl; \

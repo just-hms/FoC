@@ -26,6 +26,13 @@ namespace protocol {
         virtual std::tuple<std::string,entity::Error> Receive(int sd);
     };
 
+    struct FunkyOptions {
+        std::string name;
+        std::string peerName;
+        std::string dataPath;
+        std::string secret;
+    };
+
     struct FunkySecuritySuite {
         // std::string username;
         std::shared_ptr<sec::SymCrypt> sym;
@@ -36,6 +43,11 @@ namespace protocol {
     class FunkyProtocol : public net::IProtocol {
     private:    
 
+        std::string name;
+        std::string peerName;
+        std::string dataPath;
+        std::string secret;
+
         std::unordered_map<int, FunkySecuritySuite> sessions;
         
         // lazy handshakes
@@ -45,9 +57,8 @@ namespace protocol {
         std::tuple<FunkySecuritySuite,entity::Error> RightHandshake(int sd);
 
     public:
-        // TODO: edit constructor to accept cfg
         ~FunkyProtocol() {}
-        FunkyProtocol();
+        FunkyProtocol(FunkyOptions * opt);
 
         // Send and Receive implementations
         virtual entity::Error Send(int sd, std::string message);

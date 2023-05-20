@@ -1,6 +1,6 @@
 #include "security.h"
 
-#define MAX_ENCRYPTION_LEN 470
+constexpr int MAX_ENCRYPTION_LEN = 470;
 
 //loads users's public key contained in path into a hash map and assigns to each user a progressive ID
 sec::AsymCrypt::AsymCrypt(std::string privk_file, std::string pubk_file, std::string pwd) {
@@ -119,13 +119,13 @@ std::vector<uint8_t> sec::AsymCrypt::decrypt(std::vector<uint8_t> ct) {
 
     FILE *fp = fopen((this->privk).c_str(), "r");
     if(fp == NULL) {
-        std::cerr<<"Couldn't open AsymCrypt private key file"<<std::endl;
+        std::cerr<<"Couldn't open AsymCrypt private key file " << this->privk <<std::endl;
         return {};
     }
 
     key = PEM_read_PrivateKey(fp, NULL, NULL, (void*) this->privk_pwd.data());
     if(key == NULL) {
-        std::cerr<<"Couldn't read AsymCrypt private key"<<std::endl;
+        std::cerr<<"Couldn't read AsymCrypt private key"<<  std::endl;
         fclose(fp);
         return {};
     }

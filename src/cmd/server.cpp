@@ -8,10 +8,19 @@
 #include "./../repo/repo.h"
 
 
+constexpr const char * FUNKY_PATH =  "./data/";
+
 int main() {
     config::Config cfg;
 
-    protocol::FunkyProtocol p;
+
+    protocol::FunkyOptions fOpt{
+        .name = "server",
+        .dataPath = "./data/",
+        .secret = cfg.Secret,
+    };
+
+    protocol::FunkyProtocol p(&fOpt);
     repo::MockRepo repo;
     router::Router router(&repo);
     

@@ -1,6 +1,9 @@
 #include "./../security/security.h"
+#include "./../config/config.h"
 
 int main(){
-    sec::generateRSAkeys("./data/server", "secret", 4096);
-    sec::generateRSAkeys("./data/client", "secret", 4096);
+    config::Config cfg;
+
+    sec::generateRSAkeys("./data/server", cfg.Secret, 4096);
+    sec::generateRSAkeys("./data/client", cfg.Secret, 4096);
 }
