@@ -4,22 +4,34 @@
 #include "./../config/config.h"
 #include "./../network/network.h"
 #include "./../router/router.h"
+#include "./../protocol/protocol.h"
+#include "./../repo/repo.h"
 
+
+constexpr const char * FUNKY_PATH =  "./data/";
 
 int main() {
-    config::Config cfg{};
+    config::Config cfg;
 
-    protocol::RawProtocol p;
+
+    protocol::FunkyOptions fOpt{
+        .name = "server",
+        .dataPath = "./data/",
+        .secret = cfg.Secret,
+    };
+
+    protocol::FunkyProtocol p(&fOpt);
+    repo::MockRepo repo;
+    router::Router router(&repo);
     
     net::ServerOption opt{
         .port = cfg.ServerPort,
         .proto = &p,
+        .router = &router,
     };
 
     net::Server server(&opt);
 
-    server.SetRequestHandler(router::Handle); 
-    server.SetDisconnectionHandler(router::Disconnect); 
     server.Listen();
 
     return 0;

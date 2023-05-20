@@ -8,6 +8,10 @@
 #include "./../src/network/network.h"
 #include "./../src/config/config.h"
 #include "./../src/security/security.h"
+#include "./../src/protocol/protocol.h"
+#include "./../src/repo/repo.h"
+
+#define DATA_PATH std::string("./data/")
 
 #define ASSERT_EQUAL(expected, actual) \
     if ((expected) != (actual)) { \
@@ -39,3 +43,4 @@ int TestAES();
 int TestHash();
 int TestHashAndSalt();
 int TestMAC();
+int TestEncodeEVP_PKEY();

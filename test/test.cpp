@@ -1,7 +1,7 @@
 #include "test.h"
 
 int main(){
-    return 
+    return
     TestRawPingPong()   || 
     TestFunkyPingPong() ||
     TestDH()            ||
@@ -10,5 +10,6 @@ int main(){
     TestHash()          ||
     TestHashAndSalt()   ||
     TestMAC()           ||
+    TestEncodeEVP_PKEY()||
     0;
 }

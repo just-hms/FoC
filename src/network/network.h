@@ -1,7 +1,10 @@
+#ifndef NETWORK_H
+#define NETWORK_H
+
 #include <string>
 #include <functional>
 
-#include "./../protocol/protocol.h"
+#include "./../entity/entity.h"
 
 // general structures
 
@@ -10,10 +13,18 @@ namespace net {
     typedef std::function<std::string(int, std::string)> RequestHandler;
     typedef std::function<void(int)> DisconnectionHandler;
 
+    // IProtocol is an interface that represent a protocol
+    class IProtocol {
+    public:
+        virtual ~IProtocol() {}
+        virtual entity::Error Send(int sd, std::string message) = 0;
+        virtual std::tuple<std::string,entity::Error> Receive(int sd) = 0;
+    };
+
     struct ClientOption {
         std::string server_ip;
         int port;
-        protocol::IProtocol* proto;
+        IProtocol* proto;
 
         // milliseconds
         int timeout = -1;
@@ -24,7 +35,7 @@ namespace net {
         int sd;
         std::string server_ip;
         int server_port;
-        protocol::IProtocol* proto = nullptr;
+        IProtocol* proto = nullptr;
 
     public:
         Client(ClientOption *opt) noexcept;
@@ -33,29 +44,35 @@ namespace net {
         std::tuple<std::string,entity::Error> Request(std::string message) noexcept;
     };
 
-    struct ServerOption {
-        int port;
-        protocol::IProtocol* proto = nullptr;
+    class IRouter{
+    public:
+        virtual std::string Handle(int sd, std::string message) = 0;
+        virtual void Disconnect(int sd) = 0;
     };
 
+    struct ServerOption {
+        int port;
+        IProtocol* proto = nullptr;
+        IRouter* router = nullptr;
+    };
+    
     // Server class
     class Server {
     private:
         int listener;
         int port;
         bool stop = false;
-        protocol::IProtocol* proto;
-        RequestHandler message_callback;
-        DisconnectionHandler disconnection_callback;
+        IProtocol* proto;
+        IRouter* router;
     public:
         Server(ServerOption *opt) noexcept;
         ~Server() noexcept;
         void Listen() noexcept;
         void Stop() noexcept;
-        void SetRequestHandler(RequestHandler callback) noexcept;
-        void SetDisconnectionHandler(DisconnectionHandler callback) noexcept;
     private:
         int acceptNewConnection(fd_set *master) noexcept;
         void disconnect(fd_set *master, int sd) noexcept;
     };
 }
+
+#endif

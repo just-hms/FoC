@@ -1,12 +1,10 @@
 #include "config.h"
 
-#define SERVER_PORT "SERVER_PORT"
- 
-
-using namespace config;
+constexpr const char * SERVER_PORT =  "SERVER_PORT";
+constexpr const char * SECRET =  "SECRET";
 
 // Config constructor reads the config from config.json in the current path
-Config::Config() noexcept{
+config::Config::Config(){
     
     std::ifstream ifs("config.json");
     Json::Reader reader;
@@ -14,11 +12,14 @@ Config::Config() noexcept{
 
     reader.parse(ifs, obj);
 
-    auto a = obj.get("kek", "");
-
     // get the server port (5050 as default)
     this->ServerPort = obj.get(
         SERVER_PORT, 
         5050
     ).asInt();
+
+    this->Secret = obj.get(
+        SECRET, 
+        "secret"
+    ).asString();
 }

@@ -2,9 +2,10 @@
 #include <string>
 
 #include "./../entity/entity.h"
-#include "./../router/router.h"
 #include "./../network/network.h"
 #include "./../config/config.h"
+#include "./../protocol/protocol.h"
+#include "./../router/router.h"
 
 bool Login(net::Client * client, std::string username, std::string password){
     Json::StreamWriterBuilder builder;
@@ -87,14 +88,21 @@ void Balance(net::Client * client){
 
 
 int main() {
-    config::Config cfg{};
+    config::Config cfg;
 
-    protocol::RawProtocol p;
+    protocol::FunkyOptions fOpt{
+        .name = "client",
+        .peerName = "server",
+        .dataPath = "./data/",
+        .secret = cfg.Secret,
+    };
+    
+    protocol::FunkyProtocol protocol(&fOpt);
 
     net::ClientOption opt{
         .server_ip = "127.0.0.1",
         .port = cfg.ServerPort,
-        .proto = &p,
+        .proto = &protocol,
         .timeout = 200,
     };
 

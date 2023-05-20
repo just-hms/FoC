@@ -8,15 +8,26 @@ FLAGS=-lcrypto -ljsoncpp -g -std=c++2a -w
 build: 			build_server build_client
 
 build_server: 	$(SOURCES)
-				$(CC) -o ./$(BUILD)/server ./src/cmd/server.cpp $(SOURCES) $(FLAGS)
+				@echo building server...				
+				@$(CC) -o ./$(BUILD)/server ./src/cmd/server.cpp $(SOURCES) $(FLAGS)
 
 build_client: 	$(SOURCES)
-				$(CC) -o ./$(BUILD)/client ./src/cmd/client.cpp $(SOURCES) $(FLAGS)
+				@echo building client...				
+				@$(CC) -o ./$(BUILD)/client ./src/cmd/client.cpp $(SOURCES) $(FLAGS)
 
 clean:
 				rm -v ./$(BUILD)/*
 
+generate:		$(SOURCES)
+				@echo building generator...
+				$(CC) -o ./$(BUILD)/generator ./src/cmd/generator.cpp $(SOURCES) $(FLAGS)
+				@echo generating...
+				@./build/generator
+				
+
 test:			$(SOURCES)
+				@echo building tests...
 				$(CC) -o ./$(BUILD)/test ./test/test.cpp ./test/*_test.cpp $(SOURCES) $(FLAGS)
-				./build/test
+				@echo running tests...
+				@./build/test
 

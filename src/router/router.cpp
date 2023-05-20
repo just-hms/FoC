@@ -1,9 +1,5 @@
 #include "router.h"
 
-
-// map of currently logged users SD -> entity:User
-std::unordered_map<int, std::shared_ptr<entity::User>> users;
-
 Json::Value ExitWithJSON(int status, std::string message=""){
     Json::StreamWriterBuilder builder;
     Json::Value out;
@@ -12,7 +8,7 @@ Json::Value ExitWithJSON(int status, std::string message=""){
     return out;
 }
 
-Json::Value Login(router::Context *ctx){
+Json::Value router::Router::Login(router::Context *ctx){
     if (ctx->user != nullptr){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
@@ -22,7 +18,7 @@ Json::Value Login(router::Context *ctx){
         return ExitWithJSON(router::STATUS_BAD_REQUEST);
     }
 
-    auto res =  repo::Login(
+    auto res = this->repo->Login(
         content["username"].asString(),
         content["password"].asString()
     );
@@ -35,17 +31,17 @@ Json::Value Login(router::Context *ctx){
     }
 
     // add user to the map of logged in users
-    users[ctx->connectionID] = res; 
+    this->users[ctx->connectionID] = res; 
 
     return ExitWithJSON(router::STATUS_OK);
 }
 
-Json::Value Balance(router::Context *ctx){
+Json::Value router::Router::Balance(router::Context *ctx){
     if (ctx->user == nullptr){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
 
-    auto balance = repo::Balance(ctx->user->ID);
+    auto balance = this->repo->Balance(ctx->user->ID);
 
     // return the custom balance response
     Json::Value out;
@@ -55,7 +51,7 @@ Json::Value Balance(router::Context *ctx){
     return out;
 }
 
-Json::Value Transfer(router::Context *ctx){
+Json::Value router::Router::Transfer(router::Context *ctx){
     if (ctx->user == nullptr){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
@@ -68,7 +64,7 @@ Json::Value Transfer(router::Context *ctx){
     auto username = content["username"].asString();
     auto amount = content["amount"].asInt();
 
-    auto res =  repo::Transfer(
+    auto res =  this->repo->Transfer(
         ctx->user->ID,
         content["to"].asString(),
         content["amount"].asInt()
@@ -81,12 +77,12 @@ Json::Value Transfer(router::Context *ctx){
     return ExitWithJSON(router::STATUS_OK);
 }
 
-Json::Value History(router::Context *ctx){
+Json::Value router::Router::History(router::Context *ctx){
     if (ctx->user == nullptr){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
 
-    auto history = repo::History(ctx->user->username);
+    auto history = this->repo->History(ctx->user->username);
 
     // return the custom balance history
     Json::Value out;
@@ -107,19 +103,19 @@ Json::Value History(router::Context *ctx){
 }
 
 
-void router::Disconnect(int sd){
-    auto it = users.find(sd);
-    if (it == users.end()){
+void router::Router::Disconnect(int sd){
+    auto it = this->users.find(sd);
+    if (it == this->users.end()){
         return;
     }
 
     std::string route = "logout";
     std::cout << "/" << route <<  std::string(10 - route.length(), ' ' ) << 201 << std::endl; 
-    users.erase(sd);
+    this->users.erase(sd);
 }
 
 
-std::string router::Handle(int sd, std::string message){
+std::string router::Router::Handle(int sd, std::string message){
     Json::Reader reader;
     Json::Value content;
     reader.parse(message, content);
@@ -127,10 +123,10 @@ std::string router::Handle(int sd, std::string message){
     std::shared_ptr<entity::User> us = nullptr;
 
     // extract the user from the map
-    auto it = users.find(sd);
+    auto it = this->users.find(sd);
 
     // if exists set it
-    if (it != users.end()){
+    if (it != this->users.end()){
         us = it->second;
     }
 
@@ -146,10 +142,10 @@ std::string router::Handle(int sd, std::string message){
 
     auto route = content["route"].asString();
 
-    if (route == "login")           out = Login(&ctx);
-    else if (route == "balance")    out = Balance(&ctx);
-    else if (route == "transfer")   out = Transfer(&ctx);
-    else if (route == "history")    out = History(&ctx);
+    if (route == "login")           out = this->Login(&ctx);
+    else if (route == "balance")    out = this->Balance(&ctx);
+    else if (route == "transfer")   out = this->Transfer(&ctx);
+    else if (route == "history")    out = this->History(&ctx);
 
     // log the request
     std::cout << "/" << route <<  std::string(10 - route.length(), ' ' ) << out["status"] << std::endl; 
@@ -157,4 +153,12 @@ std::string router::Handle(int sd, std::string message){
     Json::StreamWriterBuilder builder;
     std::string str = Json::writeString(builder, out);
     return str;
+}
+
+router::Router::Router(router::IRepo* repo){
+    if(repo == nullptr){
+        std::cerr << "You must specify a repo " << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    this->repo = repo;
 }

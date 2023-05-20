@@ -9,6 +9,7 @@ namespace config {
     class Config {
     public:
         int ServerPort;
-        Config() noexcept;
+        std::string Secret;
+        Config();
     };
 }

@@ -6,12 +6,10 @@
 
 #include "network.h"
 
-using namespace net;
-
 // Client constructor
 //
 // you must a port and ip of the server to connect to and a protocol to use 
-Client::Client(ClientOption* opt) noexcept {
+net::Client::Client(ClientOption* opt) noexcept {
     if(opt->proto == nullptr){
         std::cerr << "You must specify a protocol " << std::endl;
         exit(EXIT_FAILURE);
@@ -57,7 +55,7 @@ Client::Client(ClientOption* opt) noexcept {
 }
 
 // Connect tries to connect to the specified server
-entity::Error Client::Connect() noexcept{
+entity::Error net::Client::Connect() noexcept{
     sockaddr_in server_address{};
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
@@ -73,7 +71,7 @@ entity::Error Client::Connect() noexcept{
 }
 
 // Request tries to make a request to the server, returns an error in case of failing
-std::tuple<std::string,entity::Error> Client::Request(std::string message) noexcept{
+std::tuple<std::string,entity::Error> net::Client::Request(std::string message) noexcept{
     
     auto err = this->proto->Send(this->sd, message);
 
@@ -88,4 +86,4 @@ std::tuple<std::string,entity::Error> Client::Request(std::string message) noexc
 }
 
 // ~Client is the client distructor
-Client::~Client() noexcept {;}
+net::Client::~Client() noexcept {;}
