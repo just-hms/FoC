@@ -307,7 +307,7 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
     auto encrypted = std::vector<uint8_t>(res.begin(), res.end()-64);
     //  decrypt using session key
 
-    auto mac = secSuite.mac->MAC(expectedMac);
+    auto mac = secSuite.mac->MAC(encrypted);
     if(expectedMac != mac) {
         return {
             "",

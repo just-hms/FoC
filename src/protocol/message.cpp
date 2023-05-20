@@ -19,15 +19,9 @@
 
 std::tuple<std::vector<uint8_t>,entity::Error> protocol::RawReceive(int sd) noexcept {
     
-    //receive hash of message + mes_len
-    std::vector<uint8_t> receivedHash;
-    receivedHash.resize(EVP_MD_size(EVP_sha3_512()));
-    auto res = recv(sd, (void*) receivedHash.data(), EVP_MD_size(EVP_sha3_512()), 0);
-    if(res <= 0) return { std::vector<uint8_t>(), entity::StatusCodeFromCSocketErrorCodes(res)};
-    
     //receive actual size
     auto web_len = 0;
-    res = recv(sd, (void*) &web_len, sizeof(size_t), 0);
+    auto res = recv(sd, (void*) &web_len, sizeof(size_t), 0);
     if(res <= 0) {
         return {
             std::vector<uint8_t>(), 
@@ -60,17 +54,6 @@ std::tuple<std::vector<uint8_t>,entity::Error> protocol::RawReceive(int sd) noex
         message.insert(message.end(), buffer.begin(), buffer.end());
     }
 
-    //verify integrity
-    std::vector<uint8_t> data;
-    data.insert(data.end(), message.begin(), message.end());
-    data.push_back(len>>8); data.push_back(len);
-    auto computedHash = sec::Hash(data);
-    if(computedHash != receivedHash) {
-        //either flush the socket's buffer or close the connection with peer
-        return {std::vector<uint8_t>(),
-            entity::StatusCodeFromCSocketErrorCodes(-2)};
-    }
-
     return {
         message,
         entity::StatusCodeFromCSocketErrorCodes(res)
@@ -85,21 +68,9 @@ entity::Error protocol::RawSend(int sd, std::vector<uint8_t> message) noexcept {
         return entity::ERR_MESSAGE_TOO_LONG;
     }
 
-    //send hash message + mes_len for integrity
-    std::vector<uint8_t> data;
-    data.insert(data.end(), message.begin(), message.end());
-    data.push_back(len>>8); data.push_back(len);
-    auto hash = sec::Hash(data);
-    
-    auto res = send(sd, hash.data(), EVP_MD_size(EVP_sha3_512()), 0);
-    if(res <= 0){
-        return entity::StatusCodeFromCSocketErrorCodes(res);
-    }
-
-
     //send actual size
     auto web_len = htonl(message.size());
-    res = send(sd, &web_len, sizeof(size_t), 0);
+    auto res = send(sd, &web_len, sizeof(size_t), 0);
     if(res <= 0){
         return entity::StatusCodeFromCSocketErrorCodes(res);
     }
