@@ -19,6 +19,7 @@ namespace net {
         virtual ~IProtocol() {}
         virtual entity::Error Send(int sd, std::string message) = 0;
         virtual std::tuple<std::string,entity::Error> Receive(int sd) = 0;
+        virtual void Disconnect(int sd) = 0;
     };
 
     struct ClientOption {

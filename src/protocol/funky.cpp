@@ -8,13 +8,16 @@
 #include <utility>
 #include <vector>
 
-// TODO add a disconnect hook also for the protocols
 
 protocol::FunkyProtocol::FunkyProtocol(protocol::FunkyOptions * opt){
     this->name = opt->name;
     this->peerName = opt->peerName;
     this->dataPath = opt->dataPath;
     this->secret = opt->secret;
+}
+
+void protocol::FunkyProtocol::Disconnect(int sd){
+    this->sessions.erase(sd);
 }
 
 std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::RightHandshake(int sd){
