@@ -24,6 +24,7 @@ namespace protocol {
         ~RawProtocol() {}
         virtual entity::Error Send(int sd, std::string message);
         virtual std::tuple<std::string,entity::Error> Receive(int sd);
+        virtual void Disconnect(int sd){};
     };
 
     struct FunkyOptions {
@@ -63,6 +64,7 @@ namespace protocol {
         // Send and Receive implementations
         virtual entity::Error Send(int sd, std::string message);
         virtual std::tuple<std::string,entity::Error> Receive(int sd);
+        virtual void Disconnect(int sd);
 
         void SetUsername(std::string username);
     };
