@@ -177,16 +177,18 @@ std::tuple<std::vector<uint8_t>, entity::Error> sec::derivateDH(EVP_PKEY *privk,
     return {secret, entity::ERR_OK};
 }
 
-sec::sessionKey sec::keyFromSecret(std::vector<uint8_t> secret) {
+std::tuple<sec::sessionKey, entity::Error> sec::keyFromSecret(std::vector<uint8_t> secret) {
 
     sessionKey k;
 
-    auto result = sec::Hash(std::string(secret.begin(), secret.end()));
+    auto [result, err] = sec::Hash(std::string(secret.begin(), secret.end()));
+    if (err != entity::ERR_OK) return {k, err};
+
     auto reskey = result.substr(0, SYMMLEN/8);
     auto resiv = result.substr(SYMMLEN/8, 16);
 
     memcpy(&k.key[0], reskey.data(), SYMMLEN/8);
     memcpy(&k.iv[0], resiv.data(), 16);
 
-    return k;
+    return {k, entity::ERR_OK};
 }

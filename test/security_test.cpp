@@ -35,8 +35,8 @@ int TestDH(){
     ASSERT_TRUE(sec::derivateDH(cdh, sdh2) != sec::derivateDH(cdh, sdh));
 
     //check if both parties derive the same key
-    auto k1 = sec::keyFromSecret(lvector);
-    auto k2 = sec::keyFromSecret(rvector);
+    auto [k1, k1err] = sec::keyFromSecret(lvector);
+    auto [k2, k2err] = sec::keyFromSecret(rvector);
     
     //  :-)
 
@@ -126,7 +126,8 @@ int TestHash(){
 int TestHashAndSalt(){
     std::string password = "secret";
 
-    auto hashandsalt = sec::HashAndSalt(password);
+    auto [hashandsalt, err] = sec::HashAndSalt(password);
+    ASSERT_TRUE(err == entity::ERR_OK);
 
     ASSERT_TRUE(sec::VerifyHash(hashandsalt, password));
 

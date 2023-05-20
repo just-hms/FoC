@@ -107,7 +107,9 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::tie(secret, err) = sec::derivateDH(rightDH, leftDH);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-    auto key = sec::keyFromSecret(secret);
+    sec::sessionKey key;
+    std::tie(key, err) = sec::keyFromSecret(secret);
+    if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
     suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key));
 
@@ -221,8 +223,10 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::vector<uint8_t> secret;
     std::tie(secret, err) = sec::derivateDH(leftDH, rightDH);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-    
-    auto key = sec::keyFromSecret(secret);
+
+    sec::sessionKey key;
+    std::tie(key, err) = sec::keyFromSecret(secret);
+    if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
     suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key));
 

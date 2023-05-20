@@ -77,7 +77,7 @@ namespace sec {
     EVP_PKEY* retrieveDHparam(std::vector<uint8_t> DHserialized);
     entity::Error genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
     std::tuple<std::vector<uint8_t>, entity::Error> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
-    sessionKey keyFromSecret(std::vector<uint8_t> secret);
+    std::tuple<sessionKey, entity::Error> keyFromSecret(std::vector<uint8_t> secret);
 
     class Hmac {
         unsigned char key[16];
@@ -89,9 +89,8 @@ namespace sec {
             std::tuple<std::vector<uint8_t>, entity::Error> MAC(std::vector<uint8_t> data);
     };
 
-    std::vector<uint8_t> Hash(std::vector<uint8_t> data);
-    std::string Hash(std::string data);
-    std::string HashAndSalt(std::string password, std::string salt = "");
+    std::tuple<std::string, entity::Error> Hash(std::string data);
+    std::tuple<std::string, entity::Error> HashAndSalt(std::string password, std::string salt = "");
     bool VerifyHash(std::string hashAndSalt, std::string password);
 
     std::string encode(char* data, int datalen);
