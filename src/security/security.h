@@ -84,6 +84,7 @@ namespace sec {
             std::vector<uint8_t> MAC(std::vector<uint8_t> data);
     };
 
+    std::vector<uint8_t> Hash(std::vector<uint8_t> data);
     std::string Hash(std::string data);
     std::string HashAndSalt(std::string password, std::string salt = "");
     bool VerifyHash(std::string hashAndSalt, std::string password);

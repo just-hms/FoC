@@ -240,10 +240,6 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
         return {FunkySecuritySuite{}, err};
     }
 
-    if (err != entity::ERR_OK){
-        return {FunkySecuritySuite{}, err};
-    }
-
     return {suite, entity::ERR_OK};
 }
 
@@ -253,7 +249,7 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
     
     auto it = this->sessions.find(sd);
     // if exists set it
-    if (it == this->sessions.end()){
+    if(it == this->sessions.end()) {
         auto [res, err] = this->LeftHandshake(sd);
         sessions[sd] = res;
         
@@ -261,7 +257,8 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
             return err;
         }
         secSuite = res;
-    } else{
+    }
+    else {
         secSuite = it->second;
     }
 
@@ -272,12 +269,12 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
 
     // TODO; re add this back
     // // generating hash for integrity
-    // auto mac = secSuite.mac->MAC(out);
+    auto mac = secSuite.mac->MAC(out);
     
     // // add hash to the message
     // out.insert(out.end(), mac.begin(), mac.end());
     // call rawsend
-    return protocol::RawSend(sd,out);
+    return protocol::RawSend(sd, out);
 }
 
 std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
@@ -286,7 +283,7 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
     
     auto it = this->sessions.find(sd);
     // if exists set it
-    if (it == this->sessions.end()){
+    if(it == this->sessions.end()) {
         auto [res, err] = this->RightHandshake(sd);
         sessions[sd] = res;
 
@@ -294,21 +291,19 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
             return {"", err};
         }
         secSuite = res;
-    } else{
+    }
+    else {
         secSuite = it->second;
     }
 
     //  call raw receive
     auto [res, err] = protocol::RawReceive(sd);
-    if (err != entity::ERR_OK){
-        return {
-            "",
-            err
-        };
+    if(err != entity::ERR_OK) {
+        return {"", err};
     }
 
     //  extract hash and check for integrity
-    // TODO remove hardcoded mac lenght
+    // TODO remove hardcoded mac length
     // auto expectedMac = std::vector<uint8_t>(res.end()-64 , res.end());
     // auto encrypted = std::vector<uint8_t>(res.begin(), res.end()-64);
     //  decrypt using session key

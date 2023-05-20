@@ -64,7 +64,39 @@ std::vector<uint8_t> sec::Hmac::MAC(std::vector<uint8_t> data) {
     return res;
 }
 
-//hashes data using EVP_sha3_512, returns a hex string
+
+//hashes data using EVP_sha3_512
+std::vector<uint8_t> sec::Hash(std::vector<uint8_t> data) {
+    unsigned int buflen;
+    std::vector<uint8_t> buf(hash_len);
+    EVP_MD_CTX *ctx;
+
+    if(!(ctx = EVP_MD_CTX_new())) {
+        std::cerr<<"Unable to create context for Hash"<<std::endl;
+        return {};
+    }
+    if(EVP_DigestInit(ctx, EVP_sha3_512()) <= 0) {
+        std::cerr<<"Unable to initialize context for Hash"<<std::endl;
+        EVP_MD_CTX_free(ctx);
+        return {};
+    }
+    if(EVP_DigestUpdate(ctx, data.data(), data.size()) <= 0) {
+        std::cerr<<"Unable to compute Hash"<<std::endl;
+        EVP_MD_CTX_free(ctx);
+        return {};
+    }
+    if(EVP_DigestFinal(ctx, buf.data(), &buflen) <= 0) {
+        std::cerr<<"Unable to compute Hash"<<std::endl;
+        EVP_MD_CTX_free(ctx);
+        return {};
+    }
+    EVP_MD_CTX_free(ctx);
+
+    buf.resize(buflen);
+    return buf;
+}
+
+//hashes data using EVP_sha3_512
 std::string sec::Hash(std::string data) {
     unsigned int buflen;
     char *buf = new char[hash_len];

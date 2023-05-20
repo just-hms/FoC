@@ -21,6 +21,22 @@ int pem_password_callback(char *buf, int max_len, int flag, void *udata) {
     return len;
 }
 
+size_t loadPEM(FILE *fp, char *buffer) {
+    fseek(fp, 0, SEEK_END);
+    size_t size = ftell(fp);
+
+    buffer = new char[size];
+
+    rewind(fp);
+    fread(buffer, sizeof(char), size, fp);
+
+    return size;
+}
+
+void savePEM(FILE *fp, char *buffer, size_t size) {
+    fwrite(buffer, sizeof(char), size, fp);
+}
+
 void sec::AsymCrypt::setPeerKey(std::string pubk_file) {
     this->pubk = pubk_file;
 }
@@ -43,13 +59,13 @@ std::vector<uint8_t> sec::AsymCrypt::encrypt(std::vector<uint8_t> mess) {
         std::cerr<<"Couldn't open AsymCrypt public key file "<<(this->pubk).c_str() << std::endl;
         return {};
     }
+
     key = PEM_read_PUBKEY(fp, NULL, NULL, NULL);
     if(key == NULL) {
         std::cerr<<"Couldn't read AsymCrypt public key"<<std::endl;
         fclose(fp);
         return {};
     }
-    fclose(fp);
     
     if(!(ctx = EVP_PKEY_CTX_new(key, NULL))) {
         std::cerr<<"Unable to create a contextfor AsymCrypt"<<std::endl;
@@ -106,13 +122,13 @@ std::vector<uint8_t> sec::AsymCrypt::decrypt(std::vector<uint8_t> ct) {
         std::cerr<<"Couldn't open AsymCrypt private key file"<<std::endl;
         return {};
     }
-    key = PEM_read_PrivateKey(fp, NULL, pem_password_callback, (void*)this->privk_pwd.c_str());
+
+    key = PEM_read_PrivateKey(fp, NULL, NULL, (void*) this->privk_pwd.data());
     if(key == NULL) {
         std::cerr<<"Couldn't read AsymCrypt private key"<<std::endl;
         fclose(fp);
         return {};
     }
-    fclose(fp);
 
     if(!(ctx = EVP_PKEY_CTX_new(key, NULL))) {
         std::cerr<<"Unable to create a context for AsymCrypt"<<std::endl;

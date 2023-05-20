@@ -71,15 +71,15 @@ int TestDH(){
 int TestRSA(){
     
     // RSA GENERATION
-    auto err = sec::generateRSAkeys(DATA_PATH + "server", "sercret_server", 4096);
+    auto err = sec::generateRSAkeys(DATA_PATH + "server", "secret", 4096);
     ASSERT_FALSE(err < 0);
 
-    err = sec::generateRSAkeys(DATA_PATH + "client", "sercret_client", 4096);
+    err = sec::generateRSAkeys(DATA_PATH + "client", "secret", 4096);
     ASSERT_FALSE(err < 0);
 
     // AsymCrypt
-    sec::AsymCrypt AS(DATA_PATH + "serverprivk.pem", DATA_PATH + "clientpubk.pem", "sercret_server");
-    sec::AsymCrypt AC(DATA_PATH + "clientprivk.pem", DATA_PATH + "serverpubk.pem", "sercret_client");
+    sec::AsymCrypt AS(DATA_PATH + "serverprivk.pem", DATA_PATH + "clientpubk.pem", "secret");
+    sec::AsymCrypt AC(DATA_PATH + "clientprivk.pem", DATA_PATH + "serverpubk.pem", "secret");
 
     // one way
     auto res = AC.decrypt(
