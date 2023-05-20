@@ -270,9 +270,8 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
     // TODO; re add this back
     // // generating hash for integrity
     auto mac = secSuite.mac->MAC(out);
-    
     // // add hash to the message
-    // out.insert(out.end(), mac.begin(), mac.end());
+    out.insert(out.end(), mac.begin(), mac.end());
     // call rawsend
     return protocol::RawSend(sd, out);
 }
@@ -304,20 +303,19 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
 
     //  extract hash and check for integrity
     // TODO remove hardcoded mac length
-    // auto expectedMac = std::vector<uint8_t>(res.end()-64 , res.end());
-    // auto encrypted = std::vector<uint8_t>(res.begin(), res.end()-64);
+    auto expectedMac = std::vector<uint8_t>(res.end()-64 , res.end());
+    auto encrypted = std::vector<uint8_t>(res.begin(), res.end()-64);
     //  decrypt using session key
 
-   //auto mac = secSuite.mac->MAC(encrypted);
-
-   //if (expectedMac != mac){
-   //    return {
-   //        "",
-   //        entity::ERR_BROKEN
-   //    };    
-   //}
-
-    auto mess = secSuite.sym->decrypt(res);
+    auto mac = secSuite.mac->MAC(expectedMac);
+    if(expectedMac != mac) {
+        return {
+            "",
+            entity::ERR_BROKEN
+        };    
+    }
+    
+    auto mess = secSuite.sym->decrypt(encrypted);
     
     return {
         std::string(mess.begin(), mess.end()),

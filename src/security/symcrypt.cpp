@@ -1,4 +1,5 @@
 #include "security.h"
+ #include <openssl/err.h>
 
 sec::SymCrypt::SymCrypt() {
     RAND_bytes(this->key.key, SYMMLEN/8);
@@ -76,12 +77,12 @@ std::vector<uint8_t> sec::SymCrypt::decrypt(std::vector<uint8_t> ct) {
     ptlen = len;
 
     if(EVP_DecryptFinal_ex(ctx, pt.data() + len, &len) <= 0) {
+        ERR_print_errors_fp(stderr);
         std::cerr<<"Unable to finalize decrypt with SymCrypt"<<std::endl;
         EVP_CIPHER_CTX_free(ctx);
         return {};
     }
     ptlen += len;
-
     pt.resize(ptlen);
 
     EVP_CIPHER_CTX_free(ctx);

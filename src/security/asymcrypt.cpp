@@ -167,12 +167,7 @@ std::vector<uint8_t> sec::AsymCrypt::decrypt(std::vector<uint8_t> ct) {
     EVP_PKEY_CTX_free(ctx);
     EVP_PKEY_free(key);
 
-    for(int i = 0; i < pt.size(); i++) {
-        if(pt[i] == '\0') {
-            pt.resize(i);
-            break;
-        }
-    }
+    pt.resize(ptlen);
 
     return pt;
 }
