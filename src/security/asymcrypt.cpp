@@ -40,7 +40,7 @@ std::tuple<std::vector<uint8_t>, entity::Error> sec::AsymCrypt::encrypt(std::vec
 
     if(this->pubk.size() == 0) {
         std::cerr<<"Peer key hasn't been set yet"<<std::endl;
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_FILE_NOT_FOUND};
     }
 
     FILE *fp = fopen((this->pubk).c_str(), "r");
@@ -136,7 +136,7 @@ std::tuple<std::vector<uint8_t>, entity::Error> sec::AsymCrypt::decrypt(std::vec
         std::cerr<<"Unable to set padding for AsymCrypt"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
         EVP_PKEY_free(key);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
     if(EVP_PKEY_decrypt(ctx, NULL, &ptlen, ct.data(), ct.size()) <= 0) {
         std::cerr<<"Unable to determine pt buffer length"<<std::endl;

@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+
 
 namespace entity {
     
@@ -34,6 +36,7 @@ namespace entity {
     typedef std::vector<Transaction> History;
 
     Error StatusCodeFromCSocketErrorCodes(int code);
+    void Log(std::string message);
 
 }
 

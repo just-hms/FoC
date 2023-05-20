@@ -65,8 +65,8 @@ namespace sec {
         public:
             SymCrypt();
             SymCrypt(sessionKey sessionKey);
-            std::vector<uint8_t> encrypt(std::vector<uint8_t> plaintext);
-            std::vector<uint8_t> decrypt(std::vector<uint8_t> ciphertext);
+            std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
+            std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
     
     int generateRSAkeys(std::string path, std::string password, unsigned int bits);

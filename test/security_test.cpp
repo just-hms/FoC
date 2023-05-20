@@ -39,26 +39,19 @@ int TestDH(){
     //check if both parties derive the same key
     auto k1 = sec::keyFromSecret(lvector);
     auto k2 = sec::keyFromSecret(rvector);
-    std::vector<uint8_t> tmp1(32), tmp2(16), tmp3(32), tmp4(16);
-
+    
     //  :-)
 
+    std::vector<uint8_t> tmp1(32), tmp2(16), tmp3(32), tmp4(16);
     memcpy(tmp1.data(), k1.key, 32);
      memcpy(tmp2.data(), k1.iv, 16);
       memcpy(tmp3.data(), k2.key, 32);
        memcpy(tmp4.data(), k2.iv, 16);
+    
+    ASSERT_TRUE((tmp1 == tmp3) && (tmp2 == tmp4));
 
         // :-)
 
-    ASSERT_TRUE((tmp1 == tmp3) && (tmp2 == tmp4));
-
-    sec::SymCrypt R(k1);
-
-    auto res = R.decrypt(
-        R.encrypt(expectedMess)       
-    );
-
-    ASSERT_TRUE(expectedMess == res);
 
     EVP_PKEY_free(p);
     EVP_PKEY_free(sdh);
@@ -77,8 +70,16 @@ int TestRSA(){
     ASSERT_FALSE(err < 0);
 
     // AsymCrypt
-    sec::AsymCrypt AS(DATA_PATH + "serverprivk.pem", DATA_PATH + "clientpubk.pem", "secret");
-    sec::AsymCrypt AC(DATA_PATH + "clientprivk.pem", DATA_PATH + "serverpubk.pem", "secret");
+    sec::AsymCrypt AS(
+        DATA_PATH + "server" + sec::PRIVK, 
+        DATA_PATH + "client"+sec::PUBK, 
+        "secret"
+    );
+    sec::AsymCrypt AC(
+        DATA_PATH + "client" + sec::PRIVK,
+        DATA_PATH + "server"+sec::PUBK,
+        "secret"
+    );
 
     // one way
     std::vector<uint8_t> enc;
@@ -100,21 +101,19 @@ int TestAES(){
     RAND_bytes(symk.iv, 16);
 
     sec::SymCrypt SC(symk);
-    auto res = SC.decrypt(
-        SC.encrypt(expectedMess)
-    );
+
+    // test functionality
+    auto [res, err] = SC.encrypt(expectedMess);
+    ASSERT_TRUE(err == entity::ERR_OK);
+    std::tie(res, err) = SC.decrypt(res);
+    ASSERT_TRUE(err == entity::ERR_OK);
+
     ASSERT_TRUE(expectedMess == res);
 
-    res = SC.decrypt(
-        SC.encrypt(expectedMess)
-    );
-    ASSERT_TRUE(expectedMess == res);
-
-    EVP_PKEY *dh, *pubs;
-    auto a = sec::genDHparam(dh);
-    sec::genDH(pubs, dh);
-    auto aaa = sec::encodePublicKey(pubs);
-    SC.encrypt(aaa);
+    // test using sym encrypt on long vector
+    auto encoded = std::vector<uint8_t>(3000);
+    std::tie(res, err) = SC.encrypt(encoded);
+    ASSERT_TRUE(err == entity::ERR_OK);
 
     TEST_PASSED();
 }
