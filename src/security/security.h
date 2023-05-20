@@ -13,6 +13,8 @@
 #include <openssl/hmac.h>
 #include <openssl/rand.h>
 #include <openssl/pem.h>
+#include <tuple>
+#include "../entity/entity.h"
 
 namespace sec {
 
@@ -40,8 +42,8 @@ namespace sec {
         public:
             AsymCrypt(std::string path_private_key, std::string path_public_key_peer, std::string password);
             void setPeerKey(std::string path_public_key_peer);
-            std::vector<uint8_t> encrypt(std::vector<uint8_t> plaintext);
-            std::vector<uint8_t> decrypt(std::vector<uint8_t> ciphertext);
+            std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
+            std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
 
 

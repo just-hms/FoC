@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <vector>
 
-std::vector<uint8_t> mess = {'m', 'e', 's', 's', 'a', 'g', 'e'};
+std::vector<uint8_t> expectedMess = {'m', 'e', 's', 's', 'a', 'g', 'e'};
 
 
 int TestDH(){
@@ -55,10 +55,10 @@ int TestDH(){
     sec::SymCrypt R(k1);
 
     auto res = R.decrypt(
-        R.encrypt(mess)       
+        R.encrypt(expectedMess)       
     );
 
-    ASSERT_TRUE(mess == res);
+    ASSERT_TRUE(expectedMess == res);
 
     EVP_PKEY_free(p);
     EVP_PKEY_free(sdh);
@@ -81,16 +81,14 @@ int TestRSA(){
     sec::AsymCrypt AC(DATA_PATH + "clientprivk.pem", DATA_PATH + "serverpubk.pem", "secret");
 
     // one way
-    auto res = AC.decrypt(
-        AS.encrypt(mess)
-    );
-    ASSERT_TRUE(mess == res);
+    std::vector<uint8_t> enc;
+    std::tie(enc, err) = AS.encrypt(expectedMess);
+    ASSERT_TRUE(err == entity::ERR_OK);
+    std::vector<uint8_t> mess;
+    std::tie(mess, err)= AC.decrypt(enc);
+    ASSERT_TRUE(err == entity::ERR_OK);
 
-    // the other  way
-    res = AS.decrypt(
-        AC.encrypt(mess)
-    );
-    ASSERT_TRUE(mess == res);
+    ASSERT_TRUE(expectedMess == mess);
 
     TEST_PASSED();
 }
@@ -103,14 +101,14 @@ int TestAES(){
 
     sec::SymCrypt SC(symk);
     auto res = SC.decrypt(
-        SC.encrypt(mess)
+        SC.encrypt(expectedMess)
     );
-    ASSERT_TRUE(mess == res);
+    ASSERT_TRUE(expectedMess == res);
 
     res = SC.decrypt(
-        SC.encrypt(mess)
+        SC.encrypt(expectedMess)
     );
-    ASSERT_TRUE(mess == res);
+    ASSERT_TRUE(expectedMess == res);
 
     EVP_PKEY *dh, *pubs;
     auto a = sec::genDHparam(dh);
@@ -141,7 +139,7 @@ int TestHashAndSalt(){
 int TestMAC() {
 
     sec::Hmac h;
-    ASSERT_TRUE(h.MAC(mess) == h.MAC(mess));
+    ASSERT_TRUE(h.MAC(expectedMess) == h.MAC(expectedMess));
 
     TEST_PASSED();
 }

@@ -14,6 +14,7 @@ namespace entity {
     constexpr Error ERR_BROKEN =            -3;
     constexpr Error ERR_MESSAGE_TOO_LONG =  -5;
     constexpr Error ERR_DURING_HANDSHAKE =  -5;
+    constexpr Error ERR_FILE_NOT_FOUND =    -6;
     
     constexpr size_t USERNAME_MAX_LEN =     20;
     constexpr size_t ACCEPTANCE_WINDOW =  5000;
