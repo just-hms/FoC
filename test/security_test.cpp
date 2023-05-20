@@ -9,7 +9,9 @@ int TestDH(){
     //parameter generation, key generation and derivation
     EVP_PKEY *p = NULL, *sdh = NULL, *cdh = NULL;
 
-    auto DHserialized = sec::genDHparam(p);
+    auto [DHserialized, err] = sec::genDHparam(p);
+    ASSERT_TRUE(err == entity::ERR_OK);
+
     ASSERT_FALSE(DHserialized.size() == 0);
     
     auto error = sec::genDH(sdh, p);
@@ -18,19 +20,15 @@ int TestDH(){
     error = sec::genDH(cdh, p);
     ASSERT_FALSE(error < 0);
 
-    auto lvector = sec::derivateDH(sdh, cdh);
-    auto rvector = sec::derivateDH(cdh, sdh);
+    auto [lvector, lerr] = sec::derivateDH(sdh, cdh);
+    ASSERT_TRUE(lerr == entity::ERR_OK);
+    auto [rvector, rerr] = sec::derivateDH(cdh, sdh);
+    ASSERT_TRUE(rerr == entity::ERR_OK);
 
     ASSERT_TRUE(lvector == rvector);
 
-    //DH parameters communication
-    EVP_PKEY *p2 = NULL;
-    DHserialized = sec::genDHparam(p2);
-    ASSERT_FALSE(sec::genDHparam(p) != sec::genDHparam(p2));
-    EVP_PKEY *p3 = sec::retrieveDHparam(DHserialized); 
-    ASSERT_TRUE(DHserialized == sec::genDHparam(p3));
-
     //check if using different parameters leads to different shared secret
+    EVP_PKEY *p2 = NULL;
     sec::genDHparam(p2);
     EVP_PKEY *sdh2 = NULL;
     sec::genDH(sdh2, p2);

@@ -69,12 +69,14 @@ namespace sec {
             std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
     
-    int generateRSAkeys(std::string path, std::string password, unsigned int bits);
+    entity::Error generateRSAkeys(std::string path, std::string password, unsigned int bits);
 
-    std::vector<uint8_t> genDHparam(EVP_PKEY *&params);
+    std::tuple<std::vector<uint8_t>, entity::Error> genDHparam(EVP_PKEY *&params);
+
+    // TODO fix memory leak and add error
     EVP_PKEY* retrieveDHparam(std::vector<uint8_t> DHserialized);
-    int genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
-    std::vector<uint8_t> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
+    entity::Error genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
+    std::tuple<std::vector<uint8_t>, entity::Error> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
     sessionKey keyFromSecret(std::vector<uint8_t> secret);
 
     class Hmac {
@@ -84,7 +86,7 @@ namespace sec {
             Hmac();
             Hmac(std::vector<uint8_t> key);
             std::vector<uint8_t> getKey();
-            std::vector<uint8_t> MAC(std::vector<uint8_t> data);
+            std::tuple<std::vector<uint8_t>, entity::Error> MAC(std::vector<uint8_t> data);
     };
 
     std::vector<uint8_t> Hash(std::vector<uint8_t> data);

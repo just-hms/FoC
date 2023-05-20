@@ -33,35 +33,35 @@ std::vector<uint8_t> sec::Hmac::getKey() {
 }
 
 //builds and returns a MAC in hex string form
-std::vector<uint8_t> sec::Hmac::MAC(std::vector<uint8_t> data) {
+std::tuple<std::vector<uint8_t>, entity::Error> sec::Hmac::MAC(std::vector<uint8_t> data) {
     std::vector<uint8_t>res(EVP_MD_size(EVP_sha3_512()));
     unsigned int len;
     HMAC_CTX *ctx;
     
     if(!(ctx = HMAC_CTX_new())) {
         std::cerr<<"Unable to create context for HMAC"<<std::endl;
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_FILE_NOT_FOUND};
     }
     if(HMAC_Init(ctx, this->key, sizeof(this->key), EVP_sha3_512()) <= 0) {
         std::cerr<<"Unable to initialize context for HMAC"<<std::endl;
         HMAC_CTX_free(ctx);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
     if(HMAC_Update(ctx, data.data(), data.size()) <= 0) {
         std::cerr<<"Unable to compute HMAC"<<std::endl;
         HMAC_CTX_free(ctx);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
     if(HMAC_Final(ctx, res.data(), &len) <= 0) {
         std::cerr<<"Unable to compute HMAC"<<std::endl;
         HMAC_CTX_free(ctx);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
     HMAC_CTX_free(ctx);
 
     res.resize(len);
 
-    return res;
+    return {res, entity::ERR_OK};
 }
 
 

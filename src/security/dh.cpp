@@ -41,26 +41,26 @@ EVP_PKEY* sec::decodePublicKey(std::vector<uint8_t> encodedKey) {
 }
 
 //generate g and p
-std::vector<uint8_t> sec::genDHparam(EVP_PKEY *&params) {
+std::tuple<std::vector<uint8_t>, entity::Error> sec::genDHparam(EVP_PKEY *&params) {
 
     DH *tmp = DH_get_2048_256();
     std::vector<uint8_t>res;
 
     if(tmp == NULL) {
         std::cerr<<"Couldn't create DH"<<std::endl;
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
     if(!(params = EVP_PKEY_new())) {
         std::cerr<<"Couldn't create DH"<<std::endl;
         DH_free(tmp);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
     if(EVP_PKEY_set1_DH(params, tmp) <= 0) {
         std::cerr<<"Couldn't set DH"<<std::endl;
         DH_free(tmp);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
     unsigned char *buffer = NULL;
@@ -68,7 +68,7 @@ std::vector<uint8_t> sec::genDHparam(EVP_PKEY *&params) {
     if(len <= 0) {
         std::cerr<<"Couldn't encode DH"<<std::endl;
         DH_free(tmp);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
     res.resize(len);
@@ -76,7 +76,7 @@ std::vector<uint8_t> sec::genDHparam(EVP_PKEY *&params) {
 
     DH_free(tmp);
     
-    return res;
+    return {res, entity::ERR_OK};
 }
 
 EVP_PKEY* sec::retrieveDHparam(std::vector<uint8_t> DHserialized) {
@@ -87,6 +87,8 @@ EVP_PKEY* sec::retrieveDHparam(std::vector<uint8_t> DHserialized) {
         std::cerr<<"Couldn't retrieve DH"<<std::endl;
         return NULL;
     }
+
+    // TODO fix memory leak
 
     EVP_PKEY *params;
 
@@ -106,74 +108,73 @@ EVP_PKEY* sec::retrieveDHparam(std::vector<uint8_t> DHserialized) {
     return params;
 }
 
-int sec::genDH(EVP_PKEY *&pubk, EVP_PKEY *params) {
+entity::Error sec::genDH(EVP_PKEY *&pubk, EVP_PKEY *params) {
 
     EVP_PKEY_CTX *ctx; 
 
     //generate keys
     if(!(ctx = EVP_PKEY_CTX_new(params, NULL))) {
         std::cerr<<"Couldn't create a context for DH"<<std::endl;
-        return -1;
+        return entity::ERR_BROKEN;
     }
 
     if(EVP_PKEY_keygen_init(ctx) <= 0) {
         std::cerr<<"Couldn't initialize context for DH"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
-        return -1;
+        return entity::ERR_BROKEN;
     }
 
     pubk = NULL;
     if(EVP_PKEY_keygen(ctx, &pubk) <= 0) {
         std::cerr<<"Couldn't generate key for DH"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
-        return -1;
+        return entity::ERR_BROKEN;
     }
 
     EVP_PKEY_CTX_free(ctx);
 
-    return 0;
-
+    return entity::ERR_OK;
 }
 
-std::vector<uint8_t> sec::derivateDH(EVP_PKEY *privk, EVP_PKEY *peerk) {
+std::tuple<std::vector<uint8_t>, entity::Error> sec::derivateDH(EVP_PKEY *privk, EVP_PKEY *peerk) {
     EVP_PKEY_CTX *ctx;
     std::vector<uint8_t> secret;
     size_t secretlen;
 
     if(!(ctx = EVP_PKEY_CTX_new(privk, NULL))) {
         std::cerr<<"Couldn't create a context for DH"<<std::endl;
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
     if(EVP_PKEY_derive_init(ctx) <= 0) {
         std::cerr<<"Couldn't initialize deriving context for DH"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
     if(EVP_PKEY_derive_set_peer(ctx, peerk) <= 0) {
         std::cerr<<"Couldn't set peer for DH deriving context"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
     //derives DH shared secret and returns it in 'secret'
     if(EVP_PKEY_derive(ctx, NULL, &secretlen) <= 0) {
         std::cerr<<"Couldn't derive DH key length"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
     secret.resize(secretlen);
 
     if(EVP_PKEY_derive(ctx, secret.data(), &secretlen) <= 0) {
         std::cerr<<"Couldn't derive DH key"<<std::endl;
         EVP_PKEY_CTX_free(ctx);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
     EVP_PKEY_CTX_free(ctx);
 
-    return secret;
+    return {secret, entity::ERR_OK};
 }
 
 sec::sessionKey sec::keyFromSecret(std::vector<uint8_t> secret) {
