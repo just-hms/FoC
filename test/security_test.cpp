@@ -145,7 +145,13 @@ int TestMAC() {
 int TestEncodeEVP_PKEY() {
     EVP_PKEY *key = EVP_RSA_gen(1024);
 
-    ASSERT_TRUE(sec::encodePublicKey(sec::decodePublicKey(sec::encodePublicKey(key))) == sec::encodePublicKey(key));
+    auto [encoded, err] = sec::encodePeerKey(key);
+    ASSERT_TRUE(err == entity::ERR_OK);
+
+    auto [decoded, err2] = sec::decodePeerKey(encoded);
+    auto [encoded2, err3] = sec::encodePeerKey(decoded);
+
+    ASSERT_TRUE(encoded2 == encoded);
 
     TEST_PASSED();
 }

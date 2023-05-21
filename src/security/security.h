@@ -74,13 +74,13 @@ namespace sec {
     std::tuple<std::vector<uint8_t>, entity::Error> genDHparam(EVP_PKEY *&params);
 
     // TODO fix memory leak and add error
-    EVP_PKEY* retrieveDHparam(std::vector<uint8_t> DHserialized);
+    std::tuple<EVP_PKEY*, entity::Error> retrieveDHparam(std::vector<uint8_t> DHserialized);
     entity::Error genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
     std::tuple<std::vector<uint8_t>, entity::Error> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
     std::tuple<sessionKey, entity::Error> keyFromSecret(std::vector<uint8_t> secret);
 
     class Hmac {
-        unsigned char key[16];
+        unsigned char key[HMAC_KEY_LEN];
 
         public:
             Hmac();
@@ -93,10 +93,9 @@ namespace sec {
     std::tuple<std::string, entity::Error> HashAndSalt(std::string password, std::string salt = "");
     bool VerifyHash(std::string hashAndSalt, std::string password);
 
-    std::string encode(char* data, int datalen);
-    std::vector<uint8_t>encodePublicKey(EVP_PKEY *keyToEncode);
-    std::vector<uint8_t>encodeDH(DH *dh);
-    EVP_PKEY* decodePublicKey(std::vector<uint8_t> encodedKey);
+    std::tuple<std::vector<uint8_t>, entity::Error>encodePeerKey(EVP_PKEY *keyToEncode);
+    std::tuple<std::vector<uint8_t>, entity::Error>encodeDH(DH *dh);
+    std::tuple<EVP_PKEY*, entity::Error> decodePeerKey(std::vector<uint8_t> encodedKey);
 
 }
 

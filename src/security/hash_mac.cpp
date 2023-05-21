@@ -3,7 +3,7 @@
 int hash_len = EVP_MD_size(EVP_sha3_512());
 
 //given a buffer and its length, returns a hex string of the contents of such buffer
-std::string sec::encode(char *s, int len) {
+std::string hexEncode(char *s, int len) {
     std::ostringstream oss;
     for (unsigned int i = 0; i < len; i++) {
         oss<<std::hex<<std::setw(2)<<std::setfill('0')<<static_cast<int>(s[i]);
@@ -91,7 +91,7 @@ std::tuple<std::string, entity::Error> sec::Hash(std::string data){
     }
     EVP_MD_CTX_free(ctx);
 
-    auto res = sec::encode(buf, hash_len);
+    auto res = hexEncode(buf, hash_len);
     delete[] buf;
 
     return {res, entity::ERR_OK};
@@ -106,7 +106,7 @@ std::tuple<std::string, entity::Error> sec::HashAndSalt(std::string password, st
     if(salt.size() == 0) {
         salt.resize(SALT_LEN);
         RAND_bytes((unsigned char*) salt.c_str(), SALT_LEN);
-        salt = sec::encode(&salt[0], SALT_LEN);
+        salt = hexEncode(&salt[0], SALT_LEN);
     }
     auto [hash, err] = sec::Hash(password + salt);
     if (err != entity::ERR_OK) return {"", err};

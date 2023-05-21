@@ -1,20 +1,22 @@
 #include "security.h"
+#include <cstdint>
+#include <vector>
 
 // Encode the public key as a string
-std::vector<uint8_t> sec::encodePublicKey(EVP_PKEY* publicKey) {
+std::tuple<std::vector<uint8_t>, entity::Error> sec::encodePeerKey(EVP_PKEY* publicKey) {
 
     BIO* bio = BIO_new(BIO_s_mem());
     std::vector<uint8_t>res;
 
     if(bio == NULL) {
         std::cerr<<"Couldn't allocate BIO structure"<<std::endl;
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
     if(PEM_write_bio_PUBKEY(bio, publicKey) <= 0) {
         std::cerr<<"Couldn't write public key"<<std::endl;
         BIO_free(bio);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
     char *buffer;
@@ -22,10 +24,11 @@ std::vector<uint8_t> sec::encodePublicKey(EVP_PKEY* publicKey) {
     memcpy(res.data(), buffer, res.size());
     
     BIO_free(bio);
-    return res;
+    return {res, entity::ERR_OK};
 }
 
-EVP_PKEY* sec::decodePublicKey(std::vector<uint8_t> encodedKey) {
+// TODO : fix memory leak
+std::tuple<EVP_PKEY*, entity::Error> sec::decodePeerKey(std::vector<uint8_t> encodedKey) {
     
     BIO* bio;
     EVP_PKEY* publicKey;
@@ -33,11 +36,11 @@ EVP_PKEY* sec::decodePublicKey(std::vector<uint8_t> encodedKey) {
     if(!(publicKey = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL))) {
         std::cerr<<"Couldn't read public key"<<std::endl;
         BIO_free(bio);
-        return NULL;
+        return {NULL, entity::ERR_BROKEN};
     }
 
     BIO_free(bio);
-    return publicKey;
+    return {publicKey, entity::ERR_OK};
 }
 
 //generate g and p
@@ -79,13 +82,13 @@ std::tuple<std::vector<uint8_t>, entity::Error> sec::genDHparam(EVP_PKEY *&param
     return {res, entity::ERR_OK};
 }
 
-EVP_PKEY* sec::retrieveDHparam(std::vector<uint8_t> DHserialized) {
+std::tuple<EVP_PKEY*, entity::Error> sec::retrieveDHparam(std::vector<uint8_t> DHserialized) {
     unsigned char *buffer = new unsigned char[DHserialized.size()];
     memcpy(buffer, DHserialized.data(), DHserialized.size());
     DH *tmp = d2i_DHparams(NULL, (const unsigned char**)&buffer, DHserialized.size());
     if(tmp == NULL) {
         std::cerr<<"Couldn't retrieve DH"<<std::endl;
-        return NULL;
+        return {NULL, entity::ERR_BROKEN};
     }
 
     // TODO fix memory leak
@@ -95,17 +98,17 @@ EVP_PKEY* sec::retrieveDHparam(std::vector<uint8_t> DHserialized) {
     if(!(params = EVP_PKEY_new())) {
         std::cerr<<"Couldn't create DH"<<std::endl;
         DH_free(tmp);
-        return {};
+        return {NULL, entity::ERR_BROKEN};
     }
 
     if(EVP_PKEY_set1_DH(params, tmp) <= 0) {
         std::cerr<<"Couldn't set DH"<<std::endl;
         DH_free(tmp);
-        return {};
+        return {NULL, entity::ERR_BROKEN};
     }
 
     DH_free(tmp);
-    return params;
+    return {params, entity::ERR_OK};
 }
 
 entity::Error sec::genDH(EVP_PKEY *&pubk, EVP_PKEY *params) {

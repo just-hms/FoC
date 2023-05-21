@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <ctime>
 #include <memory>
+#include <openssl/types.h>
 #include <span>
 #include <string>
 #include <sys/types.h>
@@ -84,8 +85,14 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
 
     //  4. Generate and send to client the server's DH public key
     sec::genDH(rightDH, paramsDH);
-    auto encodedRightDH = sec::encodePublicKey(rightDH);
+
+    std::vector<uint8_t> encodedRightDH;
+    std::tie(encodedRightDH, err) = sec::encodePeerKey(rightDH);
+    if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+    
+    
     std::tie(res, err) = symTMP.encrypt(encodedRightDH);
+    if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
     err = protocol::RawSend(sd, res);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
@@ -99,7 +106,9 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::tie(encodedLeftDH, err)  = symTMP.decrypt(res);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-    auto leftDH = sec::decodePublicKey(encodedLeftDH);
+    EVP_PKEY * leftDH;
+    std::tie(leftDH, err) = sec::decodePeerKey(encodedLeftDH); 
+    if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
     // 6. Derivate secret, generate key for SymCrypt
 
@@ -194,7 +203,9 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::tie(DH, err) = symTMP.decrypt(res);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-    EVP_PKEY *paramsDH = sec::retrieveDHparam(DH);
+    EVP_PKEY *paramsDH;
+    std::tie(paramsDH, err) = sec::retrieveDHparam(DH);  
+    if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
     // 4. Receive rightDH key
     std::tie(res, err) = protocol::RawReceive(sd);
@@ -209,8 +220,16 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     
     sec::genDH(leftDH, paramsDH);
 
-    auto encodedLeftDH = sec::encodePublicKey(leftDH);
-    auto rightDH = sec::decodePublicKey(encodedRightDH);
+    std::vector<uint8_t> encodedLeftDH;
+
+    std::tie(encodedLeftDH, err) = sec::encodePeerKey(leftDH);
+    if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+
+    EVP_PKEY * rightDH;
+    std::tie(rightDH, err) = sec::decodePeerKey(encodedRightDH);
+    if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+
+
     std::tie(res, err) = symTMP.encrypt(encodedLeftDH);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
