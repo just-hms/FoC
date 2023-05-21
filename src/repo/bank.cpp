@@ -1,32 +1,44 @@
 #include "repo.h"
 
+
+repo::BankRepo::BankRepo(std::string path){
+    this->path = path;
+}
+
 std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::BankRepo::Login(std::string username, std::string password){
-    return {nullptr, entity::ERR_OK};
+    std::ifstream ifs(path + "/users.json");
+    Json::Reader reader;
+    Json::Value obj;
+
+    reader.parse(ifs, obj);
+
+    // get the user
+    auto userJson = obj[username];
+    if (userJson.empty()){
+        return {nullptr, entity::ERR_NOT_FOUND};
+    }
+
+    // check the password
+    auto hashedPassword = userJson["password"].asString();
+    if (!sec::VerifyHash(hashedPassword,password)){
+        return {nullptr, entity::ERR_NOT_FOUND};        
+    }
+
+    // return the user values
+
+    auto us = std::make_shared<entity::User>();
+    us->ID = userJson["ID"].asString();
+    us->username = userJson["username"].asString();
+
+    return {us, entity::ERR_OK};
 }
 
 
 std::tuple<int, entity::Error> repo::MockBankRepo::Balance(std::string USER_ID){
-    return {10, entity::ERR_OK};
 }
 
 std::tuple<bool, entity::Error> repo::MockBankRepo::Transfer(std::string USER_ID, std::string to, float amount){
-    return {true, entity::ERR_OK};
 }
 
 std::tuple<entity::History, entity::Error> repo::MockBankRepo::History(std::string username){
-    auto transactions = entity::History();
-
-    transactions.push_back(entity::Transaction{
-        .from="kek",
-        .to="giovanni",
-        .amount = 10.5,
-    });
-
-    transactions.push_back(entity::Transaction{
-        .from="miao",
-        .to="kek",
-        .amount = 10.5,
-    });
-
-    return {transactions, entity::ERR_OK};
 }
