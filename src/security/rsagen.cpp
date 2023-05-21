@@ -11,13 +11,13 @@ int sec::generateRSAkeys(std::string path, std::string pwd, unsigned int bits) {
     if(fp == NULL) {
         std::cerr<<"Unable to create public key file"<<std::endl;
         EVP_PKEY_free(RSAkeys);
-        return -1;
+        return entity::ERR_BROKEN;
     }
     if(PEM_write_PUBKEY(fp, RSAkeys) <= 0) {
         std::cerr<<"Couldn't save public key"<<std::endl;
         fclose(fp);
         EVP_PKEY_free(RSAkeys);
-        return -1;
+        return entity::ERR_BROKEN;
     }
     fclose(fp);
 
@@ -25,16 +25,16 @@ int sec::generateRSAkeys(std::string path, std::string pwd, unsigned int bits) {
     if(fp == NULL) {
         std::cerr<<"Unable to create private key file"<<std::endl;
         EVP_PKEY_free(RSAkeys);
-        return -1;
+        return entity::ERR_BROKEN;
     }
     if(PEM_write_PrivateKey(fp, RSAkeys, EVP_aes_128_cbc(), (const unsigned char*) pwd.c_str(), pwd.size(), NULL, NULL) <= 0) {
         std::cerr<<"Couldn't save private key"<<std::endl;
         fclose(fp);
         EVP_PKEY_free(RSAkeys);
-        return -1;
+        return entity::ERR_BROKEN;
     }
     fclose(fp);
 
     EVP_PKEY_free(RSAkeys);
-    return 0;
+    return entity::ERR_OK;
 }

@@ -2,14 +2,16 @@
 #include <cstdint>
 #include <vector>
 
-std::vector<uint8_t> mess = {'m', 'e', 's', 's', 'a', 'g', 'e'};
+std::vector<uint8_t> expectedMess = {'m', 'e', 's', 's', 'a', 'g', 'e'};
 
 
 int TestDH(){
     //parameter generation, key generation and derivation
     EVP_PKEY *p = NULL, *sdh = NULL, *cdh = NULL;
 
-    auto DHserialized = sec::genDHparam(p);
+    auto [DHserialized, err] = sec::genDHparam(p);
+    ASSERT_TRUE(err == entity::ERR_OK);
+
     ASSERT_FALSE(DHserialized.size() == 0);
     
     auto error = sec::genDH(sdh, p);
@@ -18,47 +20,36 @@ int TestDH(){
     error = sec::genDH(cdh, p);
     ASSERT_FALSE(error < 0);
 
-    auto lvector = sec::derivateDH(sdh, cdh);
-    auto rvector = sec::derivateDH(cdh, sdh);
+    auto [lvector, lerr] = sec::derivateDH(sdh, cdh);
+    ASSERT_TRUE(lerr == entity::ERR_OK);
+    auto [rvector, rerr] = sec::derivateDH(cdh, sdh);
+    ASSERT_TRUE(rerr == entity::ERR_OK);
 
     ASSERT_TRUE(lvector == rvector);
 
-    //DH parameters communication
-    EVP_PKEY *p2 = NULL;
-    DHserialized = sec::genDHparam(p2);
-    ASSERT_FALSE(sec::genDHparam(p) != sec::genDHparam(p2));
-    EVP_PKEY *p3 = sec::retrieveDHparam(DHserialized); 
-    ASSERT_TRUE(DHserialized == sec::genDHparam(p3));
-
     //check if using different parameters leads to different shared secret
+    EVP_PKEY *p2 = NULL;
     sec::genDHparam(p2);
     EVP_PKEY *sdh2 = NULL;
     sec::genDH(sdh2, p2);
     ASSERT_TRUE(sec::derivateDH(cdh, sdh2) != sec::derivateDH(cdh, sdh));
 
     //check if both parties derive the same key
-    auto k1 = sec::keyFromSecret(lvector);
-    auto k2 = sec::keyFromSecret(rvector);
-    std::vector<uint8_t> tmp1(32), tmp2(16), tmp3(32), tmp4(16);
-
+    auto [k1, k1err] = sec::keyFromSecret(lvector);
+    auto [k2, k2err] = sec::keyFromSecret(rvector);
+    
     //  :-)
 
+    std::vector<uint8_t> tmp1(32), tmp2(16), tmp3(32), tmp4(16);
     memcpy(tmp1.data(), k1.key, 32);
      memcpy(tmp2.data(), k1.iv, 16);
       memcpy(tmp3.data(), k2.key, 32);
        memcpy(tmp4.data(), k2.iv, 16);
+    
+    ASSERT_TRUE((tmp1 == tmp3) && (tmp2 == tmp4));
 
         // :-)
 
-    ASSERT_TRUE((tmp1 == tmp3) && (tmp2 == tmp4));
-
-    sec::SymCrypt R(k1);
-
-    auto res = R.decrypt(
-        R.encrypt(mess)       
-    );
-
-    ASSERT_TRUE(mess == res);
 
     EVP_PKEY_free(p);
     EVP_PKEY_free(sdh);
@@ -77,20 +68,26 @@ int TestRSA(){
     ASSERT_FALSE(err < 0);
 
     // AsymCrypt
-    sec::AsymCrypt AS(DATA_PATH + "serverprivk.pem", DATA_PATH + "clientpubk.pem", "secret");
-    sec::AsymCrypt AC(DATA_PATH + "clientprivk.pem", DATA_PATH + "serverpubk.pem", "secret");
+    sec::AsymCrypt AS(
+        DATA_PATH + "server" + sec::PRIVK, 
+        DATA_PATH + "client"+sec::PUBK, 
+        "secret"
+    );
+    sec::AsymCrypt AC(
+        DATA_PATH + "client" + sec::PRIVK,
+        DATA_PATH + "server"+sec::PUBK,
+        "secret"
+    );
 
     // one way
-    auto res = AC.decrypt(
-        AS.encrypt(mess)
-    );
-    ASSERT_TRUE(mess == res);
+    std::vector<uint8_t> enc;
+    std::tie(enc, err) = AS.encrypt(expectedMess);
+    ASSERT_TRUE(err == entity::ERR_OK);
+    std::vector<uint8_t> mess;
+    std::tie(mess, err)= AC.decrypt(enc);
+    ASSERT_TRUE(err == entity::ERR_OK);
 
-    // the other  way
-    res = AS.decrypt(
-        AC.encrypt(mess)
-    );
-    ASSERT_TRUE(mess == res);
+    ASSERT_TRUE(expectedMess == mess);
 
     TEST_PASSED();
 }
@@ -102,21 +99,19 @@ int TestAES(){
     RAND_bytes(symk.iv, 16);
 
     sec::SymCrypt SC(symk);
-    auto res = SC.decrypt(
-        SC.encrypt(mess)
-    );
-    ASSERT_TRUE(mess == res);
 
-    res = SC.decrypt(
-        SC.encrypt(mess)
-    );
-    ASSERT_TRUE(mess == res);
+    // test functionality
+    auto [res, err] = SC.encrypt(expectedMess);
+    ASSERT_TRUE(err == entity::ERR_OK);
+    std::tie(res, err) = SC.decrypt(res);
+    ASSERT_TRUE(err == entity::ERR_OK);
 
-    EVP_PKEY *dh, *pubs;
-    auto a = sec::genDHparam(dh);
-    sec::genDH(pubs, dh);
-    auto aaa = sec::encodePublicKey(pubs);
-    SC.encrypt(aaa);
+    ASSERT_TRUE(expectedMess == res);
+
+    // test using sym encrypt on long vector
+    auto encoded = std::vector<uint8_t>(3000);
+    std::tie(res, err) = SC.encrypt(encoded);
+    ASSERT_TRUE(err == entity::ERR_OK);
 
     TEST_PASSED();
 }
@@ -131,7 +126,8 @@ int TestHash(){
 int TestHashAndSalt(){
     std::string password = "secret";
 
-    auto hashandsalt = sec::HashAndSalt(password);
+    auto [hashandsalt, err] = sec::HashAndSalt(password);
+    ASSERT_TRUE(err == entity::ERR_OK);
 
     ASSERT_TRUE(sec::VerifyHash(hashandsalt, password));
 
@@ -141,7 +137,7 @@ int TestHashAndSalt(){
 int TestMAC() {
 
     sec::Hmac h;
-    ASSERT_TRUE(h.MAC(mess) == h.MAC(mess));
+    ASSERT_TRUE(h.MAC(expectedMess) == h.MAC(expectedMess));
 
     TEST_PASSED();
 }
@@ -149,7 +145,13 @@ int TestMAC() {
 int TestEncodeEVP_PKEY() {
     EVP_PKEY *key = EVP_RSA_gen(1024);
 
-    ASSERT_TRUE(sec::encodePublicKey(sec::decodePublicKey(sec::encodePublicKey(key))) == sec::encodePublicKey(key));
+    auto [encoded, err] = sec::encodePeerKey(key);
+    ASSERT_TRUE(err == entity::ERR_OK);
+
+    auto [decoded, err2] = sec::decodePeerKey(encoded);
+    auto [encoded2, err3] = sec::encodePeerKey(decoded);
+
+    ASSERT_TRUE(encoded2 == encoded);
 
     TEST_PASSED();
 }

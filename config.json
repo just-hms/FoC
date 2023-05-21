@@ -1,4 +1,4 @@
 {
-    "SERVER_PORT" : 5200,
+    "SERVER_PORT" : 5220,
     "SECRET" : "secret"
 }

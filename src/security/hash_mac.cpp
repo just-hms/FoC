@@ -3,7 +3,7 @@
 int hash_len = EVP_MD_size(EVP_sha3_512());
 
 //given a buffer and its length, returns a hex string of the contents of such buffer
-std::string sec::encode(char *s, int len) {
+std::string hexEncode(char *s, int len) {
     std::ostringstream oss;
     for (unsigned int i = 0; i < len; i++) {
         oss<<std::hex<<std::setw(2)<<std::setfill('0')<<static_cast<int>(s[i]);
@@ -33,126 +33,97 @@ std::vector<uint8_t> sec::Hmac::getKey() {
 }
 
 //builds and returns a MAC in hex string form
-std::vector<uint8_t> sec::Hmac::MAC(std::vector<uint8_t> data) {
+std::tuple<std::vector<uint8_t>, entity::Error> sec::Hmac::MAC(std::vector<uint8_t> data) {
     std::vector<uint8_t>res(EVP_MD_size(EVP_sha3_512()));
     unsigned int len;
     HMAC_CTX *ctx;
     
     if(!(ctx = HMAC_CTX_new())) {
         std::cerr<<"Unable to create context for HMAC"<<std::endl;
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_FILE_NOT_FOUND};
     }
     if(HMAC_Init(ctx, this->key, sizeof(this->key), EVP_sha3_512()) <= 0) {
         std::cerr<<"Unable to initialize context for HMAC"<<std::endl;
         HMAC_CTX_free(ctx);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
     if(HMAC_Update(ctx, data.data(), data.size()) <= 0) {
         std::cerr<<"Unable to compute HMAC"<<std::endl;
         HMAC_CTX_free(ctx);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
     if(HMAC_Final(ctx, res.data(), &len) <= 0) {
         std::cerr<<"Unable to compute HMAC"<<std::endl;
         HMAC_CTX_free(ctx);
-        return {};
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
     HMAC_CTX_free(ctx);
 
     res.resize(len);
 
-    return res;
-}
-
-
-//hashes data using EVP_sha3_512
-std::vector<uint8_t> sec::Hash(std::vector<uint8_t> data) {
-    unsigned int buflen;
-    std::vector<uint8_t> buf(hash_len);
-    EVP_MD_CTX *ctx;
-
-    if(!(ctx = EVP_MD_CTX_new())) {
-        std::cerr<<"Unable to create context for Hash"<<std::endl;
-        return {};
-    }
-    if(EVP_DigestInit(ctx, EVP_sha3_512()) <= 0) {
-        std::cerr<<"Unable to initialize context for Hash"<<std::endl;
-        EVP_MD_CTX_free(ctx);
-        return {};
-    }
-    if(EVP_DigestUpdate(ctx, data.data(), data.size()) <= 0) {
-        std::cerr<<"Unable to compute Hash"<<std::endl;
-        EVP_MD_CTX_free(ctx);
-        return {};
-    }
-    if(EVP_DigestFinal(ctx, buf.data(), &buflen) <= 0) {
-        std::cerr<<"Unable to compute Hash"<<std::endl;
-        EVP_MD_CTX_free(ctx);
-        return {};
-    }
-    EVP_MD_CTX_free(ctx);
-
-    buf.resize(buflen);
-    return buf;
+    return {res, entity::ERR_OK};
 }
 
 //hashes data using EVP_sha3_512
-std::string sec::Hash(std::string data) {
+std::tuple<std::string, entity::Error> sec::Hash(std::string data){
     unsigned int buflen;
     char *buf = new char[hash_len];
     EVP_MD_CTX *ctx;
 
     if(!(ctx = EVP_MD_CTX_new())) {
         std::cerr<<"Unable to create context for Hash"<<std::endl;
-        return "";
+        return {"", entity::ERR_BROKEN};
     }
     if(EVP_DigestInit(ctx, EVP_sha3_512()) <= 0) {
         std::cerr<<"Unable to initialize context for Hash"<<std::endl;
         EVP_MD_CTX_free(ctx);
-        return "";
+        return {"", entity::ERR_BROKEN};
     }
     if(EVP_DigestUpdate(ctx, (unsigned char*)data.c_str(), data.size()) <= 0) {
         std::cerr<<"Unable to compute Hash"<<std::endl;
         EVP_MD_CTX_free(ctx);
-        return "";
+        return {"", entity::ERR_BROKEN};
     }
     if(EVP_DigestFinal(ctx, (unsigned char*)buf, &buflen) <= 0) {
         std::cerr<<"Unable to compute Hash"<<std::endl;
         EVP_MD_CTX_free(ctx);
-        return "";
+        return {"", entity::ERR_BROKEN};
     }
     EVP_MD_CTX_free(ctx);
 
-    auto res = sec::encode(buf, hash_len);
+    auto res = hexEncode(buf, hash_len);
     delete[] buf;
 
-    return res;
+    return {res, entity::ERR_OK};
 }
 
 //takes in input a password and salt
 //if the salt is empty it generates one
 //pwd and salt are concatenated and used as input to generate the hash
 //returns hex(hash|salt)
-std::string sec::HashAndSalt(std::string password, std::string salt) {
+std::tuple<std::string, entity::Error> sec::HashAndSalt(std::string password, std::string salt) {
 
     if(salt.size() == 0) {
         salt.resize(SALT_LEN);
         RAND_bytes((unsigned char*) salt.c_str(), SALT_LEN);
-        salt = sec::encode(&salt[0], SALT_LEN);
+        salt = hexEncode(&salt[0], SALT_LEN);
     }
+    auto [hash, err] = sec::Hash(password + salt);
+    if (err != entity::ERR_OK) return {"", err};
 
-    return sec::Hash(password + salt)+"|"+salt;
+    return {hash + "|" + salt, entity::ERR_OK};
 }
 
 //takes in input hex(hash|salt) and the pwd in the clear
 //returns 1 if the computed hash corresponds to the input
 bool sec::VerifyHash(std::string hashandsalt, std::string password) {
     auto salt = hashandsalt.substr(hashandsalt.find("|")+1, hashandsalt.size());
-    auto computedHash = sec::HashAndSalt(password, salt);
+    auto [computedHash, err] = sec::HashAndSalt(password, salt);
     
-    return (
-        CRYPTO_memcmp((void*) &computedHash[0], 
+    if (err != entity::ERR_OK) return false;
+    
+    return CRYPTO_memcmp((void*) &computedHash[0], 
         (void*) &hashandsalt[0], 
-        EVP_MD_size(EVP_sha3_512())) == 0
-    );
+        EVP_MD_size(EVP_sha3_512())
+    ) == 0;
 }

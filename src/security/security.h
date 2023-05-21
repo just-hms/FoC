@@ -13,6 +13,8 @@
 #include <openssl/hmac.h>
 #include <openssl/rand.h>
 #include <openssl/pem.h>
+#include <tuple>
+#include "../entity/entity.h"
 
 namespace sec {
 
@@ -40,8 +42,8 @@ namespace sec {
         public:
             AsymCrypt(std::string path_private_key, std::string path_public_key_peer, std::string password);
             void setPeerKey(std::string path_public_key_peer);
-            std::vector<uint8_t> encrypt(std::vector<uint8_t> plaintext);
-            std::vector<uint8_t> decrypt(std::vector<uint8_t> ciphertext);
+            std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
+            std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
 
 
@@ -63,37 +65,37 @@ namespace sec {
         public:
             SymCrypt();
             SymCrypt(sessionKey sessionKey);
-            std::vector<uint8_t> encrypt(std::vector<uint8_t> plaintext);
-            std::vector<uint8_t> decrypt(std::vector<uint8_t> ciphertext);
+            std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
+            std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
     
-    int generateRSAkeys(std::string path, std::string password, unsigned int bits);
+    entity::Error generateRSAkeys(std::string path, std::string password, unsigned int bits);
 
-    std::vector<uint8_t> genDHparam(EVP_PKEY *&params);
-    EVP_PKEY* retrieveDHparam(std::vector<uint8_t> DHserialized);
-    int genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
-    std::vector<uint8_t> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
-    sessionKey keyFromSecret(std::vector<uint8_t> secret);
+    std::tuple<std::vector<uint8_t>, entity::Error> genDHparam(EVP_PKEY *&params);
+
+    // TODO fix memory leak and add error
+    std::tuple<EVP_PKEY*, entity::Error> retrieveDHparam(std::vector<uint8_t> DHserialized);
+    entity::Error genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
+    std::tuple<std::vector<uint8_t>, entity::Error> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
+    std::tuple<sessionKey, entity::Error> keyFromSecret(std::vector<uint8_t> secret);
 
     class Hmac {
-        unsigned char key[16];
+        unsigned char key[HMAC_KEY_LEN];
 
         public:
             Hmac();
             Hmac(std::vector<uint8_t> key);
             std::vector<uint8_t> getKey();
-            std::vector<uint8_t> MAC(std::vector<uint8_t> data);
+            std::tuple<std::vector<uint8_t>, entity::Error> MAC(std::vector<uint8_t> data);
     };
 
-    std::vector<uint8_t> Hash(std::vector<uint8_t> data);
-    std::string Hash(std::string data);
-    std::string HashAndSalt(std::string password, std::string salt = "");
+    std::tuple<std::string, entity::Error> Hash(std::string data);
+    std::tuple<std::string, entity::Error> HashAndSalt(std::string password, std::string salt = "");
     bool VerifyHash(std::string hashAndSalt, std::string password);
 
-    std::string encode(char* data, int datalen);
-    std::vector<uint8_t>encodePublicKey(EVP_PKEY *keyToEncode);
-    std::vector<uint8_t>encodeDH(DH *dh);
-    EVP_PKEY* decodePublicKey(std::vector<uint8_t> encodedKey);
+    std::tuple<std::vector<uint8_t>, entity::Error>encodePeerKey(EVP_PKEY *keyToEncode);
+    std::tuple<std::vector<uint8_t>, entity::Error>encodeDH(DH *dh);
+    std::tuple<EVP_PKEY*, entity::Error> decodePeerKey(std::vector<uint8_t> encodedKey);
 
 }
 
