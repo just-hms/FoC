@@ -1,5 +1,14 @@
 #include "security.h"
- #include <openssl/err.h>
+#include <openssl/err.h>
+
+sec::SymCrypt::SymCrypt(std::string secret) {
+    if (secret.size() < SYMMLEN/8 + 16){
+        exit(1);
+    }
+
+    memcpy(secret.data(), &(this->key.key)[0], sec::SYMMLEN/8);
+    memcpy(secret.data() + sec::SYMMLEN/8, &(this->key.iv)[0], 16);
+}
 
 sec::SymCrypt::SymCrypt() {
     RAND_bytes(this->key.key, SYMMLEN/8);

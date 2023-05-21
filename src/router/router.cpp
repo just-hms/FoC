@@ -53,7 +53,8 @@ Json::Value router::Router::Balance(router::Context *ctx){
     // return the custom balance response
     Json::Value out;
     out["status"] = router::STATUS_OK;
-    out["balance"] = balance;
+    out["balance"] = balance.amount;
+    out["accountID"] = balance.AccountID;
     
     return out;
 }

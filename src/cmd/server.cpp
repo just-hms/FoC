@@ -21,7 +21,7 @@ int main() {
     };
 
     protocol::FunkyProtocol p(&fOpt);
-    repo::MockRepo repo;
+    repo::MockBankRepo repo;
     router::Router router(&repo);
     
     net::ServerOption opt{

@@ -1,8 +1,10 @@
 #ifndef SECURITY_H
 #define SECURITY_H
 
+#include <cstdint>
 #include <iostream>
 #include <fstream>
+#include <span>
 #include <string>
 #include <filesystem>
 #include <functional>
@@ -64,6 +66,7 @@ namespace sec {
 
         public:
             SymCrypt();
+            SymCrypt(std::string secret);
             SymCrypt(sessionKey sessionKey);
             std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
             std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);

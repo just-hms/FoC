@@ -15,8 +15,8 @@ std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::MockBankRepo::Log
 }
 
 
-std::tuple<int, entity::Error> repo::MockBankRepo::Balance(std::string USER_ID){
-    return {10, entity::ERR_OK};
+std::tuple<entity::Balance, entity::Error> repo::MockBankRepo::Balance(std::string USER_ID){
+    return {{10, "kek"}, entity::ERR_OK};
 }
 
 std::tuple<bool, entity::Error> repo::MockBankRepo::Transfer(std::string USER_ID, std::string to, float amount){

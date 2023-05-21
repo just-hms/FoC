@@ -33,6 +33,11 @@ namespace entity {
         std::string password;
     };
 
+    struct Balance{
+        float amount;
+        std::string AccountID;
+    };
+
     typedef std::vector<Transaction> History;
 
     Error StatusCodeFromCSocketErrorCodes(int code);
