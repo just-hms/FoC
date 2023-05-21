@@ -1,17 +1,7 @@
 #include "repo.h"
-#include <memory>
-#include <vector>
 
-std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::MockBankRepo::Login(std::string username, std::string password){
-    if (username!="kek" || password != "kek"){
-        return {nullptr, entity::ERR_BROKEN};
-    }
-
-    auto us = std::make_shared<entity::User>();
-    us->ID = "wejhb872bu9324";
-    us->username = "kek";
-    us->password = "kek";
-    return {us, entity::ERR_OK};
+std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::BankRepo::Login(std::string username, std::string password){
+    return {nullptr, entity::ERR_OK};
 }
 
 

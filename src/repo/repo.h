@@ -8,11 +8,18 @@
 #include <memory>
 
 namespace repo {
-    class MockRepo : public router::IRepo{
-        virtual std::shared_ptr<entity::User> Login(std::string username, std::string password);
-        virtual int Balance(std::string USER_ID);
-        virtual bool Transfer(std::string USER_ID, std::string to, float amount);
-        virtual entity::History History(std::string USER_ID);
+    class MockBankRepo : public router::IRepo{
+        virtual std::tuple<std::shared_ptr<entity::User>, entity::Error> Login(std::string username, std::string password);
+        virtual std::tuple<int, entity::Error> Balance(std::string USER_ID);
+        virtual std::tuple<bool, entity::Error> Transfer(std::string USER_ID, std::string to, float amount);
+        virtual std::tuple<entity::History,entity::Error> History(std::string USER_ID);
+    };
+
+    class BankRepo : public router::IRepo{
+        virtual std::tuple<std::shared_ptr<entity::User>, entity::Error> Login(std::string username, std::string password);
+        virtual std::tuple<int, entity::Error> Balance(std::string USER_ID);
+        virtual std::tuple<bool, entity::Error> Transfer(std::string USER_ID, std::string to, float amount);
+        virtual std::tuple<entity::History,entity::Error> History(std::string USER_ID);
     };
 }
 

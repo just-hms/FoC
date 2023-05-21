@@ -18,12 +18,12 @@ Json::Value router::Router::Login(router::Context *ctx){
         return ExitWithJSON(router::STATUS_BAD_REQUEST);
     }
 
-    auto res = this->repo->Login(
+    auto [us, err] = this->repo->Login(
         content["username"].asString(),
         content["password"].asString()
     );
 
-    if (!res){
+    if (err != entity::ERR_OK){
         return ExitWithJSON(
             router::STATUS_UNAUTHORIZED, 
             "wrong username or password"
@@ -31,7 +31,7 @@ Json::Value router::Router::Login(router::Context *ctx){
     }
 
     // add user to the map of logged in users
-    this->users[ctx->connectionID] = res; 
+    this->users[ctx->connectionID] = us; 
 
     return ExitWithJSON(router::STATUS_OK);
 }
@@ -41,7 +41,14 @@ Json::Value router::Router::Balance(router::Context *ctx){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
 
-    auto balance = this->repo->Balance(ctx->user->ID);
+    auto [balance, err] = this->repo->Balance(ctx->user->ID);
+
+    if (err != entity::ERR_OK){
+        return ExitWithJSON(
+            router::STATUS_INTERNAL_ERROR, 
+            "internal error"
+        );
+    }
 
     // return the custom balance response
     Json::Value out;
@@ -64,11 +71,18 @@ Json::Value router::Router::Transfer(router::Context *ctx){
     auto username = content["username"].asString();
     auto amount = content["amount"].asInt();
 
-    auto res =  this->repo->Transfer(
+    auto [res, err] =  this->repo->Transfer(
         ctx->user->ID,
         content["to"].asString(),
         content["amount"].asInt()
     );
+
+    if (err != entity::ERR_OK){
+        return ExitWithJSON(
+            router::STATUS_INTERNAL_ERROR, 
+            "internal error"
+        );
+    }
     
     if (!res){
         return ExitWithJSON(router::STATUS_BAD_REQUEST);
@@ -82,8 +96,15 @@ Json::Value router::Router::History(router::Context *ctx){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
 
-    auto history = this->repo->History(ctx->user->username);
+    auto [history, err] = this->repo->History(ctx->user->username);
 
+    if (err != entity::ERR_OK){
+        return ExitWithJSON(
+            router::STATUS_INTERNAL_ERROR, 
+            "internal error"
+        );
+    }
+    
     // return the custom balance history
     Json::Value out;
     out["status"] = router::STATUS_OK;
