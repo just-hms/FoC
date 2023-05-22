@@ -4,6 +4,7 @@ int main(){
     return
     TestRawPingPong()   || 
     TestFunkyPingPong() ||
+    TestDoubleFunky()   ||
     TestDH()            ||
     TestRSA()           ||
     TestAES()           ||
