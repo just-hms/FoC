@@ -6,7 +6,8 @@ static char whiteAMOUNT[] = "0123456789";
 static char *whitelist[] = {whitelistUNAME, whitelistPWD, whiteAMOUNT};
 
 bool sec::sanitize(std::string data, unsigned int index) {
-    if(data.size() >= sec::MAX_SANITIZATION_LEN) {
+    unsigned int size = data.size();
+    if(size >= sec::MAX_SANITIZATION_LEN || size == 0) {
         return false;
     }
     

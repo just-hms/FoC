@@ -33,7 +33,8 @@ bool Login(net::Client * client, std::string username, std::string password){
 
     std::string str = Json::writeString(builder, out);
 
-    auto [res, _] = client->Request(str);
+    auto [res, err] = client->Request(str);
+    if(err != entity::ERR_OK) return false;
 
     Json::Reader reader;
     Json::Value json;
@@ -51,7 +52,8 @@ bool Transfer(net::Client * client, std::string username, float amount){
 
     std::string str = Json::writeString(builder, out);
 
-    auto [res, _] = client->Request(str);
+    auto [res, err] = client->Request(str);
+    if(err != entity::ERR_OK) return false;
 
     Json::Reader reader;
     Json::Value json;
@@ -67,7 +69,8 @@ void History(net::Client * client){
 
     std::string str = Json::writeString(builder, out);
 
-    auto [res, _] = client->Request(str);
+    auto [res, err] = client->Request(str);
+    if(err != entity::ERR_OK) return;
 
     Json::Reader reader;
     Json::Value json;
@@ -136,23 +139,25 @@ int main() {
     std::string buffer;
     std::string uname;
     std::string pwd;
-    bool res; 
+    bool res = false; 
 
     do {
-        std::cout<<"Insert your username [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
-        getline(std::cin, buffer);
-        res = sec::sanitize(buffer, 0);
-    } while(!res);
-    uname = buffer;
+        do {
+            std::cout<<"Insert your username [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
+            getline(std::cin, buffer);
+            res = sec::sanitize(buffer, 0);
+        } while(!res);
+        uname = buffer;
 
-    do {
-        std::cout<<"Insert your password [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
-        getline(std::cin, buffer);
-        res = sec::sanitize(buffer, 1);
+        do {
+            std::cout<<"Insert your password [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
+            getline(std::cin, buffer);
+            res = sec::sanitize(buffer, 1);
+        } while(!res);
+        pwd = buffer;
+        if(!(res = Login(&client, uname, pwd))) std::cout<<"Incorrect username or password, try again\r\n";
     } while(!res);
-    pwd = buffer;
-
-    Login(&client, uname, pwd);
+    
     unsigned int index = 0;
     
     initscr();
@@ -185,11 +190,11 @@ int main() {
                         res = sec::sanitize(buffer, 2);
                     } while(!res);
 
-                    Transfer(&client,beneficiary, stoi(buffer));
+                    if(Transfer(&client,beneficiary, stoi(buffer))) std::cout<<"Transfer successful\r\n";
+                    else std::cout<<"Transfer unsuccessful\r\n";
                 }
                 
                 else if(index == 2) History(&client);
-
 
                 initscr();
                 keypad(stdscr, TRUE);
