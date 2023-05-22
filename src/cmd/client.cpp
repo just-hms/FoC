@@ -1,11 +1,28 @@
 #include <iostream>
 #include <string>
+#include <ncurses.h>
 
 #include "./../entity/entity.h"
 #include "./../network/network.h"
 #include "./../config/config.h"
 #include "./../protocol/protocol.h"
 #include "./../router/router.h"
+
+#define SELECTED "●"
+#define UNSELECTED "○"
+#define ENTER 10
+#define QUIT 113
+
+std::vector<std::string> choices = {"Balance", "Transfer", "History"};
+
+void printMenu(unsigned int index) {
+    if(index > 2) return;
+    for(int i = 0; i < choices.size(); i++) {
+        if(i == index) std::cout<<SELECTED;
+        else std::cout<<UNSELECTED;
+        std::cout<<" "<<choices[i]+"\r\n";
+    }
+}
 
 bool Login(net::Client * client, std::string username, std::string password){
     Json::StreamWriterBuilder builder;
@@ -63,6 +80,8 @@ void History(net::Client * client){
 
     // TODO format the history better
     std::cout << json["history"] << std::endl;
+
+    return;
 }
 
 void Balance(net::Client * client){
@@ -72,7 +91,11 @@ void Balance(net::Client * client){
 
     std::string str = Json::writeString(builder, out);
 
-    auto [res, _] = client->Request(str);
+    auto [res, err] = client->Request(str);
+    if(err != entity::ERR_OK) {
+        std::cout<<"a"<<std::endl;
+        return;
+    }
 
     Json::Reader reader;
     Json::Value json;
@@ -83,7 +106,7 @@ void Balance(net::Client * client){
         return;
     }
     
-    std::cout << json["balance"].asFloat() << std::endl; 
+    std::cout << json["balance"].asFloat() << std::endl;
 }
 
 
@@ -109,12 +132,89 @@ int main() {
     
     net::Client client(&opt);
     client.Connect();
-    
-    Login(&client, "kek", "bau") ;
-    Login(&client, "kek", "kek") ;
-    Balance(&client) ;
-    Transfer(&client, "giovanni", 10.5);
-    History(&client);
 
-    return 0;
+    std::string buffer;
+    std::string uname;
+    std::string pwd;
+    bool res; 
+
+    do {
+        std::cout<<"Insert your username [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
+        getline(std::cin, buffer);
+        res = sec::sanitize(buffer, 0);
+    } while(!res);
+    uname = buffer;
+
+    do {
+        std::cout<<"Insert your password [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
+        getline(std::cin, buffer);
+        res = sec::sanitize(buffer, 1);
+    } while(!res);
+    pwd = buffer;
+
+    Login(&client, uname, pwd);
+    unsigned int index = 0;
+    
+    initscr();
+    keypad(stdscr, TRUE);
+    noecho();
+
+    while(true) {
+        refresh();
+        printw("Use arrows to move across the options, press enter to confirm and q to quit\r\n");
+        printMenu(index);
+        switch(int(getch())) {
+            case ENTER:
+                endwin();
+                system("clear");
+
+                if(index == 0) Balance(&client);
+                
+                else if(index == 1) {
+                    std::string beneficiary;
+                    do {
+                        std::cout<<"Insert the username of the beneficiary [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
+                        getline(std::cin, buffer);
+                        res = sec::sanitize(buffer, 0);
+                    } while(!res);
+                    beneficiary = buffer;
+
+                    do {
+                        std::cout<<"Insert the amount to transfer [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
+                        getline(std::cin, buffer);
+                        res = sec::sanitize(buffer, 2);
+                    } while(!res);
+
+                    Transfer(&client,beneficiary, stoi(buffer));
+                }
+                
+                else if(index == 2) History(&client);
+
+
+                initscr();
+                keypad(stdscr, TRUE);
+                noecho();
+                getch();
+                system("clear");
+                break;
+
+            case KEY_UP:
+                system("clear");
+                index = (index - 1 > 2) ? 2 : index - 1;
+                break;
+
+            case KEY_DOWN:
+                system("clear");
+                index = (index + 1 > 2) ? 0 : index + 1;
+                break;
+
+            case QUIT:
+                endwin();
+                exit(0);
+
+            default:
+                system("clear");
+                break;
+        }
+    }
 }

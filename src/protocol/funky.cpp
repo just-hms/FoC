@@ -40,20 +40,18 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::tie(message, err) = asy.decrypt(res);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};  
 
-    char username[entity::USERNAME_MAX_LEN];
+    char buffer[sec::MAX_SANITIZATION_LEN];
     size_t timestamp;
 
-    // TODO test overflow
-    sscanf((char*) message.data(), "%19s %zu\n", username, &timestamp); 
+    sscanf((char*) message.data(), "%30s %zu\n", &buffer, &timestamp);
 
-    auto ts = time(NULL);
     //message has to be sent in the last ACCEPTANCE_WINDOW seconds
-
+    auto ts = time(NULL);
     if(!(timestamp > ts - entity::ACCEPTANCE_WINDOW)) {
         return {FunkySecuritySuite{}, entity::ERR_BROKEN};  
     }
 
-    asy.setPeerKey(this->dataPath + std::string(username)+sec::PUBK);
+    asy.setPeerKey(this->dataPath + std::string(buffer) + sec::PUBK);
 
     //  2. Generate and send to client a temporary symmetric key
     sec::sessionKey sk;

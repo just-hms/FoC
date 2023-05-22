@@ -3,7 +3,7 @@
 #include <vector>
 
 std::shared_ptr<entity::User> repo::MockRepo::Login(std::string username, std::string password){
-    if (username!="kek" || password != "kek"){
+    if (username != "kek" || password != "kek"){
         return nullptr;
     }
 
