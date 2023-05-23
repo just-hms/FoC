@@ -32,9 +32,14 @@ bool Login(net::Client * client, std::string username, std::string password){
     out["content"]["password"] = password;
 
     std::string str = Json::writeString(builder, out);
-
+    
+    std::cout<<"sending"<<std::endl;
     auto [res, err] = client->Request(str);
-    if(err != entity::ERR_OK) return false;
+    if(err == entity::ERR_BROKEN) {
+        //socket should be closed
+        exit(-1);
+    }
+    else if(err != entity::ERR_OK) return false;
 
     Json::Reader reader;
     Json::Value json;
@@ -96,7 +101,6 @@ void Balance(net::Client * client){
 
     auto [res, err] = client->Request(str);
     if(err != entity::ERR_OK) {
-        std::cout<<"a"<<std::endl;
         return;
     }
 
@@ -134,7 +138,11 @@ int main() {
 
     
     net::Client client(&opt);
-    client.Connect();
+    auto err = client.Connect();
+    if(err != entity::ERR_OK) {
+        std::cout<<"Some error occured when connecting to the server\r\n";
+        return -1;
+    }
 
     std::string buffer;
     std::string uname;
@@ -143,14 +151,14 @@ int main() {
 
     do {
         do {
-            std::cout<<"Insert your username [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
+            std::cout<<"Insert your username [max "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
             getline(std::cin, buffer);
             res = sec::sanitize(buffer, 0);
         } while(!res);
         uname = buffer;
 
         do {
-            std::cout<<"Insert your password [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
+            std::cout<<"Insert your password [8 - "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
             getline(std::cin, buffer);
             res = sec::sanitize(buffer, 1);
         } while(!res);
@@ -170,6 +178,7 @@ int main() {
         printMenu(index);
         switch(int(getch())) {
             case ENTER:
+                refresh();
                 endwin();
                 system("clear");
 
@@ -178,14 +187,14 @@ int main() {
                 else if(index == 1) {
                     std::string beneficiary;
                     do {
-                        std::cout<<"Insert the username of the beneficiary [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
+                        std::cout<<"Insert the username of the beneficiary [max "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
                         getline(std::cin, buffer);
                         res = sec::sanitize(buffer, 0);
                     } while(!res);
                     beneficiary = buffer;
 
                     do {
-                        std::cout<<"Insert the amount to transfer [max "<<sec::MAX_SANITIZATION_LEN-1<<" chars]: ";
+                        std::cout<<"Insert the amount to transfer [max "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
                         getline(std::cin, buffer);
                         res = sec::sanitize(buffer, 2);
                     } while(!res);

@@ -3,14 +3,14 @@
 #include <vector>
 
 std::shared_ptr<entity::User> repo::MockRepo::Login(std::string username, std::string password){
-    if (username != "kek" || password != "kek"){
+    if (username != "kek" || password != "kekkone!"){
         return nullptr;
     }
 
     auto us = std::make_shared<entity::User>();
     us->ID = "wejhb872bu9324";
     us->username = "kek";
-    us->password = "kek";
+    us->password = "kekkone!";
     return us;
 }
 
@@ -27,14 +27,14 @@ entity::History repo::MockRepo::History(std::string username){
     auto transactions = entity::History();
 
     transactions.push_back(entity::Transaction{
-        .from="kek",
-        .to="giovanni",
+        .from = "kek",
+        .to = "giovanni",
         .amount = 10.5,
     });
 
     transactions.push_back(entity::Transaction{
-        .from="miao",
-        .to="kek",
+        .from = "miao",
+        .to = "kek",
         .amount = 10.5,
     });
 

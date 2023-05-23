@@ -10,6 +10,9 @@ bool sec::sanitize(std::string data, unsigned int index) {
     if(size >= sec::MAX_SANITIZATION_LEN || size == 0) {
         return false;
     }
+
+    if(index == 1 && size < 8) return false;
+    if(index == 2 && data == "0") return false;
     
     if(data.find_first_not_of(whitelist[index]) != std::string::npos) return false;
 

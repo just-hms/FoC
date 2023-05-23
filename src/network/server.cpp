@@ -155,7 +155,8 @@ void net::Server::disconnect(fd_set *master, int sd) noexcept {
 
     // call the disconnected callback to make the application 
     // know that the client disconnnected
-    this->router->Disconnect(sd);                
+    this->router->Disconnect(sd);
+    this->proto->Disconnect(sd);               
 }
 
 void net::Server::Stop() noexcept{

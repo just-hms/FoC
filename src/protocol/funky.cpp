@@ -114,6 +114,10 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::tie(secret, err) = sec::derivateDH(rightDH, leftDH);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
+    EVP_PKEY_free(paramsDH);
+    EVP_PKEY_free(rightDH);
+    EVP_PKEY_free(leftDH);
+
     sec::sessionKey key;
     std::tie(key, err) = sec::keyFromSecret(secret);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
@@ -241,6 +245,10 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::tie(secret, err) = sec::derivateDH(leftDH, rightDH);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
+    EVP_PKEY_free(paramsDH);
+    EVP_PKEY_free(rightDH);
+    EVP_PKEY_free(leftDH);
+
     sec::sessionKey key;
     std::tie(key, err) = sec::keyFromSecret(secret);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
@@ -294,9 +302,7 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
         }
         secSuite = res;
     }
-    else {
-        secSuite = it->second;
-    }
+    else secSuite = it->second;
 
     //  encrypt using session key
     auto [res, err] = secSuite.sym->encrypt(
@@ -331,9 +337,7 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
         }
         secSuite = res;
     }
-    else {
-        secSuite = it->second;
-    }
+    else secSuite = it->second;
 
     //  call raw receive
     auto [res, err] = protocol::RawReceive(sd);
@@ -347,7 +351,7 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
     std::vector<uint8_t> mac;
     std::tie(mac, err) = secSuite.mac->MAC(encrypted);
     
-    if(expectedMac != mac) return {"",entity::ERR_BROKEN};    
+    if(expectedMac != mac) return {"", entity::ERR_BROKEN};
     
     std::tie(res, err) = secSuite.sym->decrypt(encrypted);
     if(err != entity::ERR_OK) return {"", err};

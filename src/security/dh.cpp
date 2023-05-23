@@ -91,8 +91,6 @@ std::tuple<EVP_PKEY*, entity::Error> sec::retrieveDHparam(std::vector<uint8_t> D
         return {NULL, entity::ERR_BROKEN};
     }
 
-    // TODO fix memory leak
-
     EVP_PKEY *params;
 
     if(!(params = EVP_PKEY_new())) {
