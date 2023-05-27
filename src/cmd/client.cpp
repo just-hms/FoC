@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <ncurses.h>
+#include <unistd.h>
 
 #include "./../entity/entity.h"
 #include "./../network/network.h"
@@ -24,7 +25,7 @@ void printMenu(unsigned int index) {
     }
 }
 
-bool Login(net::Client * client, std::string username, std::string password){
+bool Login(net::Client *client, std::string username, std::string password){
     Json::StreamWriterBuilder builder;
     Json::Value out;
     out["route"] = "login";
@@ -33,10 +34,10 @@ bool Login(net::Client * client, std::string username, std::string password){
 
     std::string str = Json::writeString(builder, out);
     
-    std::cout<<"sending"<<std::endl;
     auto [res, err] = client->Request(str);
     if(err == entity::ERR_BROKEN) {
-        //socket should be closed
+        std::cout<<"Server was shutdown, closing...\r\n";
+        sleep(3);
         exit(-1);
     }
     else if(err != entity::ERR_OK) return false;
@@ -48,7 +49,7 @@ bool Login(net::Client * client, std::string username, std::string password){
     return json["status"].asInt() == router::STATUS_OK;
 }
 
-bool Transfer(net::Client * client, std::string username, float amount){
+bool Transfer(net::Client *client, std::string username, float amount){
     Json::StreamWriterBuilder builder;
     Json::Value out;
     out["route"] = "transfer";
@@ -67,7 +68,7 @@ bool Transfer(net::Client * client, std::string username, float amount){
     return json["status"].asInt() == router::STATUS_OK;
 }
 
-void History(net::Client * client){
+void History(net::Client *client){
     Json::StreamWriterBuilder builder;
     Json::Value out;
     out["route"] = "history";
@@ -92,7 +93,7 @@ void History(net::Client * client){
     return;
 }
 
-void Balance(net::Client * client){
+void Balance(net::Client *client){
     Json::StreamWriterBuilder builder;
     Json::Value out;
     out["route"] = "balance";
