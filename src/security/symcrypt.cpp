@@ -1,16 +1,6 @@
 #include "security.h"
 #include <openssl/err.h>
 
-//given a buffer and its length, returns a hex string of the contents of such buffer
-std::string hex(char *s, int len) {
-    std::ostringstream oss;
-    for (unsigned int i = 0; i < len; i++) {
-        oss<<std::hex<<std::setw(2)<<std::setfill('0')<<static_cast<int>(s[i]);
-    }
-    return oss.str();
-}
-
-
 sec::SymCrypt::SymCrypt() {
     RAND_bytes(this->key, SYMMLEN/8);
 }
