@@ -42,21 +42,10 @@ namespace sec {
         unsigned char key[SYMMLEN/8];
 
         public:
-            SymCrypt();
-            SymCrypt(unsigned char *key);
+            SymCrypt(std::vector<uint8_t> key);
             std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
             std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
-    
-    entity::Error generateRSAkeys(std::string path, std::string password, unsigned int bits);
-
-    std::tuple<std::vector<uint8_t>, entity::Error> genDHparam(EVP_PKEY *&params);
-
-    // TODO fix memory leak and add error
-    std::tuple<EVP_PKEY*, entity::Error> retrieveDHparam(std::vector<uint8_t> DHserialized);
-    entity::Error genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
-    std::tuple<std::vector<uint8_t>, entity::Error> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
-    std::tuple<std::vector<uint8_t>, entity::Error> keyFromSecret(std::vector<uint8_t> secret);
 
     class Hmac {
         unsigned char key[HMAC_KEY_LEN];
@@ -74,9 +63,17 @@ namespace sec {
     std::tuple<std::string, entity::Error> HashAndSalt(std::string password, std::string salt = "");
     bool VerifyHash(std::string hashAndSalt, std::string password);
 
+
+    entity::Error generateRSAkeys(std::string path, std::string password, unsigned int bits);
     std::tuple<std::vector<uint8_t>, entity::Error>encodePeerKey(EVP_PKEY *keyToEncode);
-    std::tuple<std::vector<uint8_t>, entity::Error>encodeDH(DH *dh);
     std::tuple<EVP_PKEY*, entity::Error> decodePeerKey(std::vector<uint8_t> encodedKey);
+
+    std::tuple<std::vector<uint8_t>, entity::Error> genDHparam(EVP_PKEY *&params);
+    entity::Error genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
+    std::tuple<std::vector<uint8_t>, entity::Error>encodeDH(DH *dh);
+    std::tuple<EVP_PKEY*, entity::Error> retrieveDHparam(std::vector<uint8_t> DHserialized);
+    std::tuple<std::vector<uint8_t>, entity::Error> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
+    std::tuple<std::vector<uint8_t>, entity::Error> keyFromSecret(std::vector<uint8_t> secret);
 
     bool sanitize(std::string, unsigned int);
 
