@@ -9,7 +9,9 @@
 repo::BankRepo::BankRepo(std::string folder_path, std::string secret, int historyLen){
     this->folder_path = folder_path;
     std::cout << "1" << std::endl;
-    this->sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(secret));
+    this->sym = std::make_shared<sec::SymCrypt>(
+        sec::SymCrypt((unsigned char *)secret.data())
+    );
     std::cout << "2" << std::endl;
     this->historyLen = historyLen;
     std::cout << "3" << std::endl;

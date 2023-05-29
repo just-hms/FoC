@@ -19,7 +19,6 @@ namespace entity {
     constexpr Error ERR_FILE_NOT_FOUND =    -6;
     constexpr Error ERR_ALREADY_EXISTS =    -7;
     
-    constexpr size_t USERNAME_MAX_LEN =     20;
     constexpr size_t ACCEPTANCE_WINDOW =  5000;
 
     struct Transaction{

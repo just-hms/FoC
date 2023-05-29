@@ -3,13 +3,13 @@
 #include <vector>
 
 std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::MockBankRepo::Login(std::string username, std::string password){
-    if (username!="kek" || password != "kek"){
+    if (username!="kek" || password != "kekkone!"){
         return {nullptr, entity::ERR_BROKEN};
     }
 
     auto us = std::make_shared<entity::User>();
     us->username = "kek";
-    us->password = "kek";
+    us->password = "kekkone!";
     return {us, entity::ERR_OK};
 }
 
@@ -26,14 +26,14 @@ std::tuple<entity::History, entity::Error> repo::MockBankRepo::History(std::stri
     auto transactions = entity::History();
 
     transactions.push_back(entity::Transaction{
-        .from="kek",
-        .to="giovanni",
+        .from = "kek",
+        .to = "giovanni",
         .amount = 10.5,
     });
 
     transactions.push_back(entity::Transaction{
-        .from="miao",
-        .to="kek",
+        .from = "miao",
+        .to = "kek",
         .amount = 10.5,
     });
 

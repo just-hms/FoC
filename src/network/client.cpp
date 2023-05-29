@@ -67,7 +67,8 @@ entity::Error net::Client::Connect() noexcept{
         sizeof(server_address)
     );
 
-    return entity::StatusCodeFromCSocketErrorCodes(res);
+    if(res == 0) return entity::StatusCodeFromCSocketErrorCodes(1);     //connect returns 0 on success
+    else return entity::StatusCodeFromCSocketErrorCodes(res);
 }
 
 // Request tries to make a request to the server, returns an error in case of failing

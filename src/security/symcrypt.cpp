@@ -1,28 +1,19 @@
 #include "security.h"
 #include <openssl/err.h>
 
-sec::SymCrypt::SymCrypt(std::string secret) {
-    if (secret.size() < SYMMLEN/8 + 16){
-        exit(1);
-    }
-
-    memcpy(secret.data(), &(this->key.key)[0], sec::SYMMLEN/8);
-    memcpy(secret.data() + sec::SYMMLEN/8, &(this->key.iv)[0], 16);
-}
-
 sec::SymCrypt::SymCrypt() {
-    RAND_bytes(this->key.key, SYMMLEN/8);
-    RAND_bytes(this->key.iv, 16);
+    RAND_bytes(this->key, SYMMLEN/8);
 }
 
-sec::SymCrypt::SymCrypt(sec::sessionKey k) {
-    this->key = k;
+sec::SymCrypt::SymCrypt(unsigned char *k) {
+    memcpy(&(this->key[0]), k, SYMMLEN/8);
 }
 
 //encrypts pt by using the userID's session key
 std::tuple<std::vector<uint8_t>, entity::Error> sec::SymCrypt::encrypt(std::vector<uint8_t> pt) {
     EVP_CIPHER_CTX *ctx;
     int ctlen, len;
+    std::vector<uint8_t> iv(16);
     std::vector<uint8_t> ct;
     
     if(!(ctx = EVP_CIPHER_CTX_new())) {
@@ -30,7 +21,13 @@ std::tuple<std::vector<uint8_t>, entity::Error> sec::SymCrypt::encrypt(std::vect
         return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
-    if(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, this->key.key, this->key.iv) <= 0) {
+    if(RAND_bytes(iv.data(), 16) <= 0) {
+        std::cerr<<"Unable to create an IV"<<std::endl;
+        EVP_CIPHER_CTX_free(ctx);
+        return {std::vector<uint8_t>(), entity::ERR_BROKEN};
+    }
+
+    if(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, this->key, iv.data()) <= 0) {
         std::cerr<<"Unable to initialize a context for SymCrypt"<<std::endl;
         EVP_CIPHER_CTX_free(ctx);
         return {std::vector<uint8_t>(), entity::ERR_BROKEN};
@@ -52,8 +49,9 @@ std::tuple<std::vector<uint8_t>, entity::Error> sec::SymCrypt::encrypt(std::vect
     }
     ctlen += len;
     EVP_CIPHER_CTX_free(ctx);
-
+    
     ct.resize(ctlen);
+    ct.insert(ct.begin(), iv.begin(), iv.end());
 
     return {ct, entity::ERR_OK};
 }
@@ -62,14 +60,17 @@ std::tuple<std::vector<uint8_t>, entity::Error> sec::SymCrypt::encrypt(std::vect
 std::tuple<std::vector<uint8_t>, entity::Error> sec::SymCrypt::decrypt(std::vector<uint8_t> ct) {
     EVP_CIPHER_CTX *ctx;
     int ptlen, len;
-    std::vector<uint8_t> pt;
+    std::vector<uint8_t> pt, iv;
+
+    iv.insert(iv.end(), ct.begin(), ct.begin() + 16);
+    ct.erase(ct.begin(), ct.begin() + 16);
 
     if(!(ctx = EVP_CIPHER_CTX_new())) {
         std::cerr<<"Unable to create a context for SymCrypt"<<std::endl;
         return {std::vector<uint8_t>(), entity::ERR_BROKEN};
     }
 
-    if(EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, this->key.key, this->key.iv) <= 0) {
+    if(EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, this->key, iv.data()) <= 0) {
         std::cerr<<"Unable to initialize a context for SymCrypt"<<std::endl;
         EVP_CIPHER_CTX_free(ctx);
         return {std::vector<uint8_t>(), entity::ERR_BROKEN};

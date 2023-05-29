@@ -20,22 +20,14 @@
 
 namespace sec {
 
-    constexpr int SYMMLEN =          256;
-    constexpr int SALT_LEN =         16;
-    constexpr int HMAC_KEY_LEN =     16;
-    constexpr int MAC_LEN =          64;
+    constexpr int SYMMLEN =              256;
+    constexpr int SALT_LEN =              16;
+    constexpr int HMAC_KEY_LEN =          16;
+    constexpr int MAC_LEN =               64;
+    constexpr int MAX_SANITIZATION_LEN =  31;
     constexpr char const* PUBK =     "pubk.pem";
     constexpr char const* PRIVK =    "privk.pem";
 
-    // ASYMCRYPT
-    /*EXAMPLE
-    AsymCrypt a(private_key_cb, load_public_keys("./clients/"));
-    ciphertext c = a.encrypt((unsigned char*)"Lorem ipsum dolor sit amet\n", 0);
-    if(c.len != 0) {
-        string s = a.decrypt(c);
-        cout<<s<<endl;
-    }
-    */
     class AsymCrypt {
         std::string privk;
         std::string pubk;
@@ -48,26 +40,12 @@ namespace sec {
             std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
 
-
-    // SYMCRYPT
-    //stores key and iv for AES cipher
-    struct sessionKey {
-        unsigned char key[SYMMLEN/8], iv[16];
-    } typedef sessionKey;
-
-
-    /*EXAMPLE
-    SymCrypt b(0);
-    unsigned char *enc = b.encrypt(0, (unsigned char*) "Lorem ipsum dolor sit amet\n");
-    cout<<string((char*) b.decrypt(0, enc))<<endl;
-    */
     class SymCrypt {
-        sessionKey key;
+        unsigned char key[SYMMLEN/8];
 
         public:
             SymCrypt();
-            SymCrypt(std::string secret);
-            SymCrypt(sessionKey sessionKey);
+            SymCrypt(unsigned char *key);
             std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
             std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
@@ -80,7 +58,7 @@ namespace sec {
     std::tuple<EVP_PKEY*, entity::Error> retrieveDHparam(std::vector<uint8_t> DHserialized);
     entity::Error genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
     std::tuple<std::vector<uint8_t>, entity::Error> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
-    std::tuple<sessionKey, entity::Error> keyFromSecret(std::vector<uint8_t> secret);
+    std::tuple<std::vector<uint8_t>, entity::Error> keyFromSecret(std::vector<uint8_t> secret);
 
     class Hmac {
         unsigned char key[HMAC_KEY_LEN];
@@ -92,6 +70,8 @@ namespace sec {
             std::tuple<std::vector<uint8_t>, entity::Error> MAC(std::vector<uint8_t> data);
     };
 
+    //UTILITY FUNCTIONS
+
     std::tuple<std::string, entity::Error> Hash(std::string data);
     std::tuple<std::string, entity::Error> HashAndSalt(std::string password, std::string salt = "");
     bool VerifyHash(std::string hashAndSalt, std::string password);
@@ -99,6 +79,8 @@ namespace sec {
     std::tuple<std::vector<uint8_t>, entity::Error>encodePeerKey(EVP_PKEY *keyToEncode);
     std::tuple<std::vector<uint8_t>, entity::Error>encodeDH(DH *dh);
     std::tuple<EVP_PKEY*, entity::Error> decodePeerKey(std::vector<uint8_t> encodedKey);
+
+    bool sanitize(std::string, unsigned int);
 
 }
 

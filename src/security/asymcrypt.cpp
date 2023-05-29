@@ -10,22 +10,6 @@ sec::AsymCrypt::AsymCrypt(std::string privk_file, std::string pubk_file, std::st
     this->privk_pwd = pwd;
 }
 
-size_t loadPEM(FILE *fp, char *buffer) {
-    fseek(fp, 0, SEEK_END);
-    size_t size = ftell(fp);
-
-    buffer = new char[size];
-
-    rewind(fp);
-    fread(buffer, sizeof(char), size, fp);
-
-    return size;
-}
-
-void savePEM(FILE *fp, char *buffer, size_t size) {
-    fwrite(buffer, sizeof(char), size, fp);
-}
-
 void sec::AsymCrypt::setPeerKey(std::string pubk_file) {
     this->pubk = pubk_file;
 }
