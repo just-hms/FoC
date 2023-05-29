@@ -1,4 +1,5 @@
 {
     "SERVER_PORT" : 5240,
-    "SECRET" : "1234567890wewbf32bf28ub32bf923f329nf0ewbefkewkfnwunfew9fuew9"
+    "HISTORY_LEN" : 5240,
+    "SECRET" : "23br832f28f823nf932nf32mf23mfi023mf320m"
 }

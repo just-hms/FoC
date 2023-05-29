@@ -18,6 +18,8 @@ namespace entity {
     constexpr Error ERR_DURING_HANDSHAKE =  -5;
     constexpr Error ERR_FILE_NOT_FOUND =    -6;
     constexpr Error ERR_ALREADY_EXISTS =    -7;
+    constexpr Error ERR_UNATORIZED =        -8;
+    
     
     constexpr size_t ACCEPTANCE_WINDOW =  5000;
 
@@ -27,15 +29,17 @@ namespace entity {
         float amount;
     };
 
-    struct User{
-        std::string username;
-        std::string password;
-    };
-
     struct Balance{
         float amount;
         std::string AccountID;
     };
+
+    struct User{
+        std::string username;
+        std::string password;
+        Balance balance;
+    };
+
 
     typedef std::vector<Transaction> History;
 

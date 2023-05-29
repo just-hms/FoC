@@ -10,6 +10,7 @@ namespace config {
     public:
         int ServerPort;
         std::string Secret;
+        int HistoryLen;
         Config();
     };
 }

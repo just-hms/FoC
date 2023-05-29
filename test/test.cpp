@@ -6,7 +6,7 @@ int main(){
     // TestFunkyPingPong() ||
     // TestDH()            ||
     // TestRSA()           ||
-    TestAES()           ||
+    // TestAES()           ||
     // TestHash()          ||
     // TestHashAndSalt()   ||
     // TestMAC()           ||

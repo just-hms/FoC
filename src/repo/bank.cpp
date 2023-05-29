@@ -8,9 +8,8 @@
 
 repo::BankRepo::BankRepo(std::string folder_path, std::string secret, int historyLen){
     this->folder_path = folder_path;
-
     this->sym = std::make_shared<sec::SymCrypt>(
-        sec::SymCrypt((unsigned char *)secret.data())
+        sec::SymCrypt(std::vector<uint8_t>(secret.begin(), secret.end()))
     );
     this->historyLen = historyLen;
 }
@@ -35,6 +34,9 @@ entity::Error repo::BankRepo::Create(entity::User * u){
             auto [usersValue, err] = this->sym->decrypt(
                 std::vector<uint8_t>(encryptedUsers.begin(), encryptedUsers.end())
             );
+            if (err != entity::ERR_OK){
+                return err;
+            }
             
             Json::Reader reader;
             reader.parse(
@@ -54,8 +56,8 @@ entity::Error repo::BankRepo::Create(entity::User * u){
     }
 
     Json::Value createUserJson;
-    createUserJson["accountID"] = uuid::New();
-    createUserJson["balance"] = 0;
+    createUserJson["accountID"] = u->balance.AccountID;
+    createUserJson["balance"] = u->balance.amount;
     auto [hashedPassword, err] = sec::HashAndSalt(u->password);
     if (err != entity::ERR_OK){
         return err;
@@ -104,9 +106,7 @@ std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::BankRepo::Login(s
     // put the string into a json
     Json::Reader reader;
     Json::Value obj;
-    if (!ifs.is_open()){
-        return {nullptr, entity::ERR_BROKEN};
-    }
+
     reader.parse(
         std::string(usersValue.begin(), usersValue.end()), 
         obj
@@ -121,7 +121,7 @@ std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::BankRepo::Login(s
     // check the password
     auto hashedPassword = userJson["password"].asString();
     if (!sec::VerifyHash(hashedPassword,password)){
-        return {nullptr, entity::ERR_NOT_FOUND};        
+        return {nullptr, entity::ERR_UNATORIZED};        
     }
 
     // return the user values
@@ -196,21 +196,22 @@ std::tuple<bool, entity::Error> repo::BankRepo::Transfer(entity::Transaction* t)
     // add new transfer to the history
     senderHistory.push_back(*t);
     err = this->updateHistory(t->from, &senderHistory);
-    if (errH != entity::ERR_OK){
+    if (err != entity::ERR_OK){
         return {false, entity::ERR_BROKEN};         
     }
 
     receiverHistory.push_back(*t);
     err = this->updateHistory(t->to, &receiverHistory);
-    if (errH != entity::ERR_OK){
+    if (err != entity::ERR_OK){
         return {false, entity::ERR_BROKEN};         
     }
 
     // update the bank accounts of the interest users
     err = this->updateBalances(t);
-    if (errH != entity::ERR_OK){
+    if (err != entity::ERR_OK){
         return {false, entity::ERR_BROKEN};         
     }
+
     return {true, entity::ERR_OK};
 }
 
@@ -304,8 +305,9 @@ std::tuple<entity::History, entity::Error> repo::BankRepo::History(std::string u
 
     std::ifstream ifs(this->folder_path + "/transfers/" + username + ".json");
 
+    // if the file does not exists the history is empty
     if (!ifs.is_open()){
-        return {entity::History(), entity::ERR_BROKEN};
+        return {entity::History(), entity::ERR_OK};
     }
 
     std::stringstream buf;

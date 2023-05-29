@@ -2,6 +2,8 @@
 
 constexpr const char * SERVER_PORT =  "SERVER_PORT";
 constexpr const char * SECRET =  "SECRET";
+constexpr const char * HISTORY_LEN =  "HISTORY_LEN";
+
 
 // Config constructor reads the config from config.json in the current path
 config::Config::Config(){
@@ -20,6 +22,11 @@ config::Config::Config(){
 
     this->Secret = obj.get(
         SECRET, 
-        "secret"
+        "f2832923fi0232m0f2jf0329hf82g8321g76r32fr327"
     ).asString();
+
+    this->HistoryLen = obj.get(
+        HISTORY_LEN, 
+        5
+    ).asInt();
 }

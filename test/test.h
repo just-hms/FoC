@@ -10,6 +10,7 @@
 #include "./../src/security/security.h"
 #include "./../src/protocol/protocol.h"
 #include "./../src/repo/repo.h"
+#include "./../src/uuid/uuid.h"
 
 #define DATA_PATH std::string("./test/data/")
 
