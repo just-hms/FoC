@@ -41,7 +41,7 @@ Json::Value router::Router::Balance(router::Context *ctx){
         return ExitWithJSON(router::STATUS_UNAUTHORIZED);
     }
 
-    auto [balance, err] = this->repo->Balance(ctx->user->ID);
+    auto [balance, err] = this->repo->Balance(ctx->user->username);
 
     if (err != entity::ERR_OK){
         return ExitWithJSON(
@@ -72,11 +72,13 @@ Json::Value router::Router::Transfer(router::Context *ctx){
     auto username = content["username"].asString();
     auto amount = content["amount"].asInt();
 
-    auto [res, err] =  this->repo->Transfer(
-        ctx->user->ID,
-        content["to"].asString(),
-        content["amount"].asInt()
-    );
+    auto t = entity::Transaction{
+        .from = ctx->user->username,
+        .to = content["to"].asString(),
+        .amount = content["amount"].asFloat()
+    };
+
+    auto [res, err] =  this->repo->Transfer(&t);
 
     if (err != entity::ERR_OK){
         return ExitWithJSON(

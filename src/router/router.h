@@ -38,7 +38,7 @@ namespace router {
     public:
         virtual std::tuple<std::shared_ptr<entity::User>, entity::Error> Login(std::string username, std::string password) = 0;
         virtual std::tuple<entity::Balance, entity::Error> Balance(std::string USER_ID) = 0;
-        virtual std::tuple<bool, entity::Error> Transfer(std::string USER_ID, std::string to, float amount) = 0;
+        virtual std::tuple<bool, entity::Error> Transfer(entity::Transaction * t) = 0;
         virtual std::tuple<entity::History,entity::Error> History(std::string USER_ID) = 0;
     };
 

@@ -8,7 +8,6 @@ std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::MockBankRepo::Log
     }
 
     auto us = std::make_shared<entity::User>();
-    us->ID = "wejhb872bu9324";
     us->username = "kek";
     us->password = "kek";
     return {us, entity::ERR_OK};
@@ -19,7 +18,7 @@ std::tuple<entity::Balance, entity::Error> repo::MockBankRepo::Balance(std::stri
     return {{10, "kek"}, entity::ERR_OK};
 }
 
-std::tuple<bool, entity::Error> repo::MockBankRepo::Transfer(std::string USER_ID, std::string to, float amount){
+std::tuple<bool, entity::Error> repo::MockBankRepo::Transfer(entity::Transaction * t){
     return {true, entity::ERR_OK};
 }
 

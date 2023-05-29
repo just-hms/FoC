@@ -38,6 +38,7 @@
 int TestRawPingPong();
 int TestFunkyPingPong();
 int TestDH();
+int TestRepo();
 int TestRSA();
 int TestAES();
 int TestHash();
