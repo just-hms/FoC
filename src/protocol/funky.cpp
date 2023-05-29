@@ -54,11 +54,11 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     asy.setPeerKey(this->dataPath + std::string(buffer) + sec::PUBK);
 
     //  2. Generate and send to client a temporary symmetric key
-    unsigned char tmpKey[sec::SYMMLEN/8];
-    RAND_bytes(&tmpKey[0], sec::SYMMLEN/8);
+    std::vector<uint8_t> tmpKey(sec::SYMMLEN/8);
+    RAND_bytes(tmpKey.data(), sec::SYMMLEN/8);
     sec::SymCrypt symTMP(tmpKey);
     std::vector<uint8_t> aesTMP(sec::SYMMLEN/8);
-    memcpy(aesTMP.data(), &tmpKey[0], sec::SYMMLEN/8);
+    memcpy(aesTMP.data(), tmpKey.data(), sec::SYMMLEN/8);
 
     std::tie(res, err) = asy.encrypt(aesTMP);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};  
@@ -119,7 +119,7 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::tie(key, err) = sec::keyFromSecret(secret);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-    suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key.data()));
+    suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key));
 
     //  7. Creation and delivery of MAC symmetric key
     suite.mac = std::make_shared<sec::Hmac>(sec::Hmac());
@@ -188,8 +188,8 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::vector<uint8_t> encodedSK;
 
     std::tie(encodedSK, err) = asy.decrypt(res);
-    unsigned char tmpKey[sec::SYMMLEN/8];
-    memcpy(&(tmpKey)[0], encodedSK.data(), sec::SYMMLEN/8);
+    std::vector<uint8_t> tmpKey(sec::SYMMLEN/8);
+    memcpy(tmpKey.data(), encodedSK.data(), sec::SYMMLEN/8);
     sec::SymCrypt symTMP(tmpKey);
 
     // 3. Receive DH parameters
@@ -248,7 +248,7 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::tie(key, err) = sec::keyFromSecret(secret);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-    suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key.data()));
+    suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key));
 
     // 7. Receive the key to be used in MAC 
     std::tie(res, err) = protocol::RawReceive(sd);
