@@ -54,13 +54,11 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     asy.setPeerKey(this->dataPath + std::string(buffer) + sec::PUBK);
 
     //  2. Generate and send to client a temporary symmetric key
-    sec::sessionKey sk;
-    RAND_bytes(sk.key, sec::SYMMLEN/8);
-    RAND_bytes(sk.iv, 16);
-    sec::SymCrypt symTMP(sk);
-    std::vector<uint8_t> aesTMP(sec::SYMMLEN/8+16);
-    memcpy(aesTMP.data(), &(sk.key)[0], sec::SYMMLEN/8);
-    memcpy(aesTMP.data() + sec::SYMMLEN/8, &(sk.iv)[0], 16);
+    unsigned char tmpKey[sec::SYMMLEN/8];
+    RAND_bytes(&tmpKey[0], sec::SYMMLEN/8);
+    sec::SymCrypt symTMP(tmpKey);
+    std::vector<uint8_t> aesTMP(sec::SYMMLEN/8);
+    memcpy(aesTMP.data(), &tmpKey[0], sec::SYMMLEN/8);
 
     std::tie(res, err) = asy.encrypt(aesTMP);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};  
@@ -98,7 +96,6 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     // 5. Receive client's DH public key
     std::tie(res, err) = protocol::RawReceive(sd);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-
     
     std::vector<uint8_t> encodedLeftDH;
     std::tie(encodedLeftDH, err)  = symTMP.decrypt(res);
@@ -117,12 +114,12 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     EVP_PKEY_free(paramsDH);
     EVP_PKEY_free(rightDH);
     EVP_PKEY_free(leftDH);
-
-    sec::sessionKey key;
+    
+    std::vector<uint8_t> key;
     std::tie(key, err) = sec::keyFromSecret(secret);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-    suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key));
+    suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key.data()));
 
     //  7. Creation and delivery of MAC symmetric key
     suite.mac = std::make_shared<sec::Hmac>(sec::Hmac());
@@ -191,11 +188,9 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     std::vector<uint8_t> encodedSK;
 
     std::tie(encodedSK, err) = asy.decrypt(res);
-    sec::sessionKey sk;
-    memcpy(&(sk.key)[0], encodedSK.data(), sec::SYMMLEN/8);
-    memcpy(&(sk.iv)[0], encodedSK.data()+sec::SYMMLEN/8, 16);
-
-    sec::SymCrypt symTMP(sk);
+    unsigned char tmpKey[sec::SYMMLEN/8];
+    memcpy(&(tmpKey)[0], encodedSK.data(), sec::SYMMLEN/8);
+    sec::SymCrypt symTMP(tmpKey);
 
     // 3. Receive DH parameters
     std::tie(res, err) = protocol::RawReceive(sd);
@@ -249,11 +244,11 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     EVP_PKEY_free(rightDH);
     EVP_PKEY_free(leftDH);
 
-    sec::sessionKey key;
+    std::vector<uint8_t> key;
     std::tie(key, err) = sec::keyFromSecret(secret);
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-    suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key));
+    suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key.data()));
 
     // 7. Receive the key to be used in MAC 
     std::tie(res, err) = protocol::RawReceive(sd);

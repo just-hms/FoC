@@ -38,16 +38,12 @@ namespace sec {
             std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
 
-    struct sessionKey {
-        unsigned char key[SYMMLEN/8], iv[16];
-    } typedef sessionKey;
-
     class SymCrypt {
-        sessionKey key;
+        unsigned char key[SYMMLEN/8];
 
         public:
             SymCrypt();
-            SymCrypt(sessionKey sessionKey);
+            SymCrypt(unsigned char *key);
             std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
             std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
@@ -60,7 +56,7 @@ namespace sec {
     std::tuple<EVP_PKEY*, entity::Error> retrieveDHparam(std::vector<uint8_t> DHserialized);
     entity::Error genDH(EVP_PKEY *&dhkey, EVP_PKEY *params);
     std::tuple<std::vector<uint8_t>, entity::Error> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
-    std::tuple<sessionKey, entity::Error> keyFromSecret(std::vector<uint8_t> secret);
+    std::tuple<std::vector<uint8_t>, entity::Error> keyFromSecret(std::vector<uint8_t> secret);
 
     class Hmac {
         unsigned char key[HMAC_KEY_LEN];

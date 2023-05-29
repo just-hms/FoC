@@ -41,10 +41,8 @@ int TestDH(){
     //  :-)
 
     std::vector<uint8_t> tmp1(32), tmp2(16), tmp3(32), tmp4(16);
-    memcpy(tmp1.data(), k1.key, 32);
-     memcpy(tmp2.data(), k1.iv, 16);
-      memcpy(tmp3.data(), k2.key, 32);
-       memcpy(tmp4.data(), k2.iv, 16);
+    memcpy(tmp1.data(), k1.data(), 32);
+      memcpy(tmp3.data(), k2.data(), 32);
     
     ASSERT_TRUE((tmp1 == tmp3) && (tmp2 == tmp4));
 
@@ -94,11 +92,10 @@ int TestRSA(){
 
 int TestAES(){
 
-    sec::sessionKey symk;
-    RAND_bytes(symk.key, sec::SYMMLEN/8);
-    RAND_bytes(symk.iv, 16);
+    std::vector<uint8_t> key(sec::SYMMLEN/8);
+    RAND_bytes(key.data(), sec::SYMMLEN/8);
 
-    sec::SymCrypt SC(symk);
+    sec::SymCrypt SC(key.data());
 
     // test functionality
     auto [res, err] = SC.encrypt(expectedMess);
