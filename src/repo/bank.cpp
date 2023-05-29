@@ -8,14 +8,11 @@
 
 repo::BankRepo::BankRepo(std::string folder_path, std::string secret, int historyLen){
     this->folder_path = folder_path;
-    std::cout << "1" << std::endl;
+
     this->sym = std::make_shared<sec::SymCrypt>(
         sec::SymCrypt((unsigned char *)secret.data())
     );
-    std::cout << "2" << std::endl;
     this->historyLen = historyLen;
-    std::cout << "3" << std::endl;
-
 }
 
 entity::Error repo::BankRepo::Create(entity::User * u){
@@ -33,24 +30,27 @@ entity::Error repo::BankRepo::Create(entity::User * u){
         ifs.close();    
         auto encryptedUsers = buf.str();
 
-        auto [usersValue, err] = this->sym->decrypt(
-            std::vector<uint8_t>(encryptedUsers.begin(), encryptedUsers.end())
-        );
-         
-        Json::Reader reader;
-        reader.parse(
-            std::string(
-                usersValue.begin(), 
-                usersValue.end()
-            ), 
-            usersJson
-        );
+        if (encryptedUsers != ""){
 
-        // if the user already exists return error
-        auto userJson = usersJson[u->username];
-        if (!userJson.empty()){
-            return entity::ERR_ALREADY_EXISTS;
-        }
+            auto [usersValue, err] = this->sym->decrypt(
+                std::vector<uint8_t>(encryptedUsers.begin(), encryptedUsers.end())
+            );
+            
+            Json::Reader reader;
+            reader.parse(
+                std::string(
+                    usersValue.begin(), 
+                    usersValue.end()
+                ), 
+                usersJson
+            );
+
+            // if the user already exists return error
+            auto userJson = usersJson[u->username];
+            if (!userJson.empty()){
+                return entity::ERR_ALREADY_EXISTS;
+            }
+        }  
     }
 
     Json::Value createUserJson;
