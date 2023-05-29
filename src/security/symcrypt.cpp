@@ -1,12 +1,10 @@
 #include "security.h"
 #include <openssl/err.h>
 
-sec::SymCrypt::SymCrypt() {
-    RAND_bytes(this->key, SYMMLEN/8);
-}
-
-sec::SymCrypt::SymCrypt(unsigned char *k) {
-    memcpy(&(this->key[0]), k, SYMMLEN/8);
+sec::SymCrypt::SymCrypt(std::vector<uint8_t> k) {
+    if(k.size() < SYMMLEN/8) exit(1);
+    k.resize(SYMMLEN/8);
+    memcpy(&(this->key[0]), k.data(), SYMMLEN/8);
 }
 
 //encrypts pt by using the userID's session key

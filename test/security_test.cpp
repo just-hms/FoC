@@ -95,7 +95,7 @@ int TestAES(){
     std::vector<uint8_t> key(sec::SYMMLEN/8);
     RAND_bytes(key.data(), sec::SYMMLEN/8);
 
-    sec::SymCrypt SC(key.data());
+    sec::SymCrypt SC(key);
 
     // test functionality
     auto [res, err] = SC.encrypt(expectedMess);
