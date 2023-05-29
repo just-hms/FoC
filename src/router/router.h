@@ -16,10 +16,11 @@
 namespace router {
 
     typedef int reqstatus;
-    constexpr reqstatus STATUS_OK = 200;
-    constexpr reqstatus STATUS_BAD_REQUEST = 400;
-    constexpr reqstatus STATUS_NOT_FOUND = 404;
-    constexpr reqstatus STATUS_UNAUTHORIZED = 401;
+    constexpr reqstatus STATUS_OK =             200;
+    constexpr reqstatus STATUS_BAD_REQUEST =    400;
+    constexpr reqstatus STATUS_NOT_FOUND =      404;
+    constexpr reqstatus STATUS_UNAUTHORIZED =   401;
+    constexpr reqstatus STATUS_INTERNAL_ERROR = 500;
 
     struct Context{
         std::shared_ptr<entity::User> user;
@@ -35,10 +36,10 @@ namespace router {
 
     class IRepo{
     public:
-        virtual std::shared_ptr<entity::User> Login(std::string username, std::string password) = 0;
-        virtual int Balance(std::string USER_ID) = 0;
-        virtual bool Transfer(std::string USER_ID, std::string to, float amount) = 0;
-        virtual entity::History History(std::string USER_ID) = 0;
+        virtual std::tuple<std::shared_ptr<entity::User>, entity::Error> Login(std::string username, std::string password) = 0;
+        virtual std::tuple<entity::Balance, entity::Error> Balance(std::string USER_ID) = 0;
+        virtual std::tuple<bool, entity::Error> Transfer(entity::Transaction * t) = 0;
+        virtual std::tuple<entity::History,entity::Error> History(std::string USER_ID) = 0;
     };
 
     class Router : public net::IRouter{

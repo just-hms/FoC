@@ -2,28 +2,27 @@
 #include <memory>
 #include <vector>
 
-std::shared_ptr<entity::User> repo::MockRepo::Login(std::string username, std::string password){
-    if (username != "kek" || password != "kekkone!"){
-        return nullptr;
+std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::MockBankRepo::Login(std::string username, std::string password){
+    if (username!="kek" || password != "kekkone!"){
+        return {nullptr, entity::ERR_BROKEN};
     }
 
     auto us = std::make_shared<entity::User>();
-    us->ID = "wejhb872bu9324";
     us->username = "kek";
     us->password = "kekkone!";
-    return us;
+    return {us, entity::ERR_OK};
 }
 
 
-int repo::MockRepo::Balance(std::string USER_ID){
-    return 10;
+std::tuple<entity::Balance, entity::Error> repo::MockBankRepo::Balance(std::string USER_ID){
+    return {{10, "kek"}, entity::ERR_OK};
 }
 
-bool repo::MockRepo::Transfer(std::string USER_ID, std::string to, float amount){
-    return true;
+std::tuple<bool, entity::Error> repo::MockBankRepo::Transfer(entity::Transaction * t){
+    return {true, entity::ERR_OK};
 }
 
-entity::History repo::MockRepo::History(std::string username){
+std::tuple<entity::History, entity::Error> repo::MockBankRepo::History(std::string username){
     auto transactions = entity::History();
 
     transactions.push_back(entity::Transaction{
@@ -38,5 +37,5 @@ entity::History repo::MockRepo::History(std::string username){
         .amount = 10.5,
     });
 
-    return transactions;
+    return {transactions, entity::ERR_OK};
 }

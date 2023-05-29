@@ -1,8 +1,10 @@
 #ifndef SECURITY_H
 #define SECURITY_H
 
+#include <cstdint>
 #include <iostream>
 #include <fstream>
+#include <span>
 #include <string>
 #include <filesystem>
 #include <functional>

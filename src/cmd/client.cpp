@@ -124,7 +124,7 @@ int main() {
     protocol::FunkyOptions fOpt{
         .name = "client",
         .peerName = "server",
-        .dataPath = "./data/",
+        .dataPath = "./data/keys/",
         .secret = cfg.Secret,
     };
     

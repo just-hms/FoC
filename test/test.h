@@ -10,8 +10,9 @@
 #include "./../src/security/security.h"
 #include "./../src/protocol/protocol.h"
 #include "./../src/repo/repo.h"
+#include "./../src/uuid/uuid.h"
 
-#define DATA_PATH std::string("./data/")
+#define DATA_PATH std::string("./test/data/")
 
 #define ASSERT_EQUAL(expected, actual) \
     if ((expected) != (actual)) { \
@@ -39,6 +40,7 @@ int TestRawPingPong();
 int TestFunkyPingPong();
 int TestDoubleFunky();
 int TestDH();
+int TestRepo();
 int TestRSA();
 int TestAES();
 int TestHash();

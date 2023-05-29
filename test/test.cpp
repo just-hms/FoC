@@ -4,7 +4,6 @@ int main(){
     return
     TestRawPingPong()   || 
     TestFunkyPingPong() ||
-    //TestDoubleFunky()   ||
     TestDH()            ||
     TestRSA()           ||
     TestAES()           ||
@@ -12,5 +11,5 @@ int main(){
     TestHashAndSalt()   ||
     TestMAC()           ||
     TestEncodeEVP_PKEY()||
-    0;
+    TestRepo();
 }
