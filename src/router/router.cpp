@@ -54,7 +54,7 @@ Json::Value router::Router::Balance(router::Context *ctx){
     Json::Value out;
     out["status"] = router::STATUS_OK;
     out["balance"] = balance.amount;
-    out["accountID"] = balance.AccountID;
+    out["accountID"] = balance.accountID;
     
     return out;
 }

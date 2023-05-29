@@ -56,7 +56,7 @@ entity::Error repo::BankRepo::Create(entity::User * u){
     }
 
     Json::Value createUserJson;
-    createUserJson["accountID"] = u->balance.AccountID;
+    createUserJson["accountID"] = u->balance.accountID;
     createUserJson["balance"] = u->balance.amount;
     auto [hashedPassword, err] = sec::HashAndSalt(u->password);
     if (err != entity::ERR_OK){
@@ -291,7 +291,7 @@ entity::Error repo::BankRepo::updateHistory(std::string username, entity::Histor
     if (err != entity::ERR_OK)return err;
 
     // write down the encrypted history
-    std::ofstream ofs(this->folder_path + "/transfers/" + username + ".json");
+    std::ofstream ofs(this->folder_path + "transfers/" + username + ".json");
     if (!ofs.is_open()){
         return entity::ERR_BROKEN;
     }
@@ -303,7 +303,7 @@ entity::Error repo::BankRepo::updateHistory(std::string username, entity::Histor
 
 std::tuple<entity::History, entity::Error> repo::BankRepo::History(std::string username){
 
-    std::ifstream ifs(this->folder_path + "/transfers/" + username + ".json");
+    std::ifstream ifs(this->folder_path + "transfers/" + username + ".json");
 
     // if the file does not exists the history is empty
     if (!ifs.is_open()){

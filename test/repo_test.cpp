@@ -6,13 +6,15 @@ int TestRepo() {
     repo::BankRepo r(DATA_PATH, cfg.Secret, cfg.HistoryLen);
 
     std::system(("rm " + DATA_PATH + "users.json").c_str());
+    std::system(("mkdir -p " + DATA_PATH + "transfers").c_str());
+    std::system(("rm " + DATA_PATH + "transfers/*").c_str());
 
     auto us = entity::User{
         .username="kek",
         .password="lolz",
         .balance = entity::Balance{
             .amount = 100,
-            .AccountID = uuid::New(),
+            .accountID = uuid::New(),
         }
     };
     auto err = r.Create(&us);
@@ -23,7 +25,7 @@ int TestRepo() {
         .password="lolz",
         .balance = entity::Balance{
             .amount = 70,
-            .AccountID = uuid::New(),
+            .accountID = uuid::New(),
         }
     };
     err = r.Create(&us);

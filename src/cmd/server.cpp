@@ -8,20 +8,17 @@
 #include "./../repo/repo.h"
 
 
-constexpr const char * FUNKY_PATH =  "./data/";
-
 int main() {
     config::Config cfg;
 
-
     protocol::FunkyOptions fOpt{
         .name = "server",
-        .dataPath = "./data/",
+        .dataPath = "./data/keys/",
         .secret = cfg.Secret,
     };
 
     protocol::FunkyProtocol p(&fOpt);
-    repo::MockBankRepo repo;
+    repo::BankRepo repo("./data/", cfg.Secret, cfg.HistoryLen);
     router::Router router(&repo);
     
     net::ServerOption opt{

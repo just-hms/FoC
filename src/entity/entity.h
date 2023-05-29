@@ -31,7 +31,7 @@ namespace entity {
 
     struct Balance{
         float amount;
-        std::string AccountID;
+        std::string accountID;
     };
 
     struct User{
