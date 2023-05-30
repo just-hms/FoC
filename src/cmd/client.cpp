@@ -119,10 +119,22 @@ void Balance(net::Client *client){
 
 
 int main() {
+
+    std::string buffer;
+    std::string uname;
+    bool res = false;
+
+    do {
+        std::cout<<"Insert your username [max "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
+        getline(std::cin, buffer);
+        res = sec::sanitize(buffer, 0);
+    } while(!res);
+    uname = buffer;
+
     config::Config cfg;
 
     protocol::FunkyOptions fOpt{
-        .name = "client",
+        .name = uname,
         .peerName = "server",
         .dataPath = "./data/keys/",
         .secret = cfg.Secret,
@@ -137,7 +149,6 @@ int main() {
         .timeout = 200,
     };
 
-    
     net::Client client(&opt);
     auto err = client.Connect();
     if(err != entity::ERR_OK) {
@@ -145,19 +156,10 @@ int main() {
         return -1;
     }
 
-    std::string buffer;
-    std::string uname;
+    res = false;
     std::string pwd;
-    bool res = false; 
 
     do {
-        do {
-            std::cout<<"Insert your username [max "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
-            getline(std::cin, buffer);
-            res = sec::sanitize(buffer, 0);
-        } while(!res);
-        uname = buffer;
-
         do {
             std::cout<<"Insert your password [8 - "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
             getline(std::cin, buffer);
@@ -200,7 +202,7 @@ int main() {
                         res = sec::sanitize(buffer, 2);
                     } while(!res);
 
-                    if(Transfer(&client,beneficiary, stoi(buffer))) std::cout<<"Transfer successful\r\n";
+                    if(Transfer(&client, beneficiary, stoi(buffer))) std::cout<<"Transfer successful\r\n";
                     else std::cout<<"Transfer unsuccessful\r\n";
                 }
                 

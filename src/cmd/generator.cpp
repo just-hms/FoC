@@ -9,9 +9,11 @@
 int main(){
     config::Config cfg;
 
-    std::system(("rm " + basePath + "users.json").c_str());
-    std::system(("mkdir -p " + basePath + "transfers").c_str());
-    std::system(("mkdir -p " + basePath + "keys").c_str());
+    try {
+        std::system(("rm " + basePath + "users.json").c_str());
+        std::system(("mkdir -p " + basePath + "transfers").c_str());
+        std::system(("mkdir -p " + basePath + "keys").c_str());
+    } catch(bool res) {;}
 
     auto users = std::vector<entity::User>{
         entity::User{

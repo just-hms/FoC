@@ -58,6 +58,7 @@ entity::Error repo::BankRepo::Create(entity::User * u){
     Json::Value createUserJson;
     createUserJson["accountID"] = u->balance.accountID;
     createUserJson["balance"] = u->balance.amount;
+    createUserJson["username"] = u->username;
     auto [hashedPassword, err] = sec::HashAndSalt(u->password);
     if (err != entity::ERR_OK){
         return err;
@@ -88,8 +89,7 @@ entity::Error repo::BankRepo::Create(entity::User * u){
     return entity::ERR_OK;
 }
 
-
-std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::BankRepo::Login(std::string username, std::string password){
+std::tuple<entity::User, entity::Error> repo::BankRepo::getUserByName(std::string username){
     auto filename = this->folder_path + "users.json";
     
     std::ifstream ifs(filename);
@@ -115,81 +115,83 @@ std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::BankRepo::Login(s
     // get the user
     auto userJson = obj[username];
     if (userJson.empty()){
-        return {nullptr, entity::ERR_NOT_FOUND};
+        return {entity::User{}, entity::ERR_NOT_FOUND};
+    }
+
+    auto us = entity::User{
+        .username = userJson["username"].asString(),
+        .password = userJson["password"].asString(),
+        .balance = entity::Balance{
+            .amount = userJson["balance"].asFloat(),
+            .accountID = userJson["accountID"].asString()
+        }
+    };
+
+    return {us, entity::ERR_OK};
+}
+
+std::tuple<std::shared_ptr<entity::User>, entity::Error> repo::BankRepo::Login(std::string username, std::string password){
+    auto [us, err] = this->getUserByName(username);
+    if(err != entity::ERR_OK) {
+        return {nullptr, entity::ERR_UNATORIZED};
     }
 
     // check the password
-    auto hashedPassword = userJson["password"].asString();
+    auto hashedPassword = us.password;
     if (!sec::VerifyHash(hashedPassword,password)){
         return {nullptr, entity::ERR_UNATORIZED};        
     }
 
     // return the user values
 
-    auto us = std::make_shared<entity::User>();
-    us->username = userJson["username"].asString();
+    auto user = std::make_shared<entity::User>();
+    user->username = us.username;
+    user->password = us.password;
+    user->balance = us.balance;
 
-    return {us, entity::ERR_OK};
+    return {user, entity::ERR_OK};
 }
 
 
 std::tuple<entity::Balance, entity::Error> repo::BankRepo::Balance(std::string username){
-    auto filename = this->folder_path + "users.json";
-    
-    std::ifstream ifs(filename);
-    std::stringstream buf;
-    buf << ifs.rdbuf();
-    ifs.close();
-    auto encryptedUsers = buf.str();
-
-    // decrypt file
-    auto [usersValue, err] = this->sym->decrypt(
-        std::vector<uint8_t>(encryptedUsers.begin(), encryptedUsers.end())
-    );
-
-    // put the string into a json
-    Json::Reader reader;
-    Json::Value obj;
-
-    reader.parse(
-        std::string(usersValue.begin(), usersValue.end()), 
-        obj
-    );
-
-    // get the user
-    auto userJson = obj[username];
-    if (userJson.empty()){
-        return {{0, ""}, entity::ERR_NOT_FOUND};
+    auto [us, err] = this->getUserByName(username);
+    if(err != entity::ERR_OK) {
+        return {entity::Balance{}, entity::ERR_NOT_FOUND};
     }
 
     // return the user values
     return {
-        {
-            userJson["balance"].asFloat(),
-            userJson["accountID"].asString(),
-        }, 
+        us.balance, 
         entity::ERR_OK
     };
 }
 
 std::tuple<bool, entity::Error> repo::BankRepo::Transfer(entity::Transaction* t){
+    auto [us1, err1] = this->getUserByName(t->to);
+    if(err1 != entity::ERR_OK) {
+        return {false, entity::ERR_NOT_FOUND};
+    }
+
     if (t->amount < 0){
         return {false, entity::ERR_BROKEN}; 
     }
 
     // check if the current balance is above the requested one
     auto [senderBalance, err] = this->Balance(t->from);
-    if (senderBalance.amount < t->amount){
+    if (err != entity::ERR_OK && senderBalance.amount < t->amount){
+        std::cout<<senderBalance.amount<<" "<<t->amount<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
     auto [senderHistory, errH] = this->History(t->from);
     if (errH != entity::ERR_OK){
+        std::cout<<"3"<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
     auto [receiverHistory, errHistory2] = this->History(t->to);
     if (errH != entity::ERR_OK){
+        std::cout<<"4"<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
@@ -197,18 +199,21 @@ std::tuple<bool, entity::Error> repo::BankRepo::Transfer(entity::Transaction* t)
     senderHistory.push_back(*t);
     err = this->updateHistory(t->from, &senderHistory);
     if (err != entity::ERR_OK){
+        std::cout<<"5"<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
     receiverHistory.push_back(*t);
     err = this->updateHistory(t->to, &receiverHistory);
     if (err != entity::ERR_OK){
+        std::cout<<"6"<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
     // update the bank accounts of the interest users
     err = this->updateBalances(t);
     if (err != entity::ERR_OK){
+        std::cout<<"7"<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 

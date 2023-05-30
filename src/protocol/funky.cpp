@@ -67,7 +67,7 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
     //  3. Generate and send to client DH parameters
-    EVP_PKEY *paramsDH = nullptr, *rightDH = nullptr;
+    EVP_PKEY *paramsDH, *rightDH;
 
     std::vector<uint8_t> DH;
     std::tie(DH, err) = sec::genDHparam(paramsDH);
@@ -213,7 +213,7 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
     if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
     // 5. Send leftDH key
-    EVP_PKEY *leftDH = nullptr;
+    EVP_PKEY *leftDH;
     
     sec::genDH(leftDH, paramsDH);
 
@@ -290,11 +290,10 @@ entity::Error protocol::FunkyProtocol::Send(int sd, std::string message){
     // if exists set it
     if(it == this->sessions.end()) {
         auto [res, err] = this->LeftHandshake(sd);
-        sessions[sd] = res;
-        
         if (err != entity::ERR_OK){
             return err;
         }
+        sessions[sd] = res;
         secSuite = res;
     }
     else secSuite = it->second;
@@ -325,11 +324,11 @@ std::tuple<std::string,entity::Error> protocol::FunkyProtocol::Receive(int sd){
     // if exists set it
     if(it == this->sessions.end()) {
         auto [res, err] = this->RightHandshake(sd);
-        sessions[sd] = res;
-
         if (err != entity::ERR_OK){
             return {"", err};
         }
+        sessions[sd] = res;
+
         secSuite = res;
     }
     else secSuite = it->second;

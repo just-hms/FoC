@@ -31,7 +31,7 @@ Json::Value router::Router::Login(router::Context *ctx){
     }
 
     // add user to the map of logged in users
-    this->users[ctx->connectionID] = us; 
+    this->users[ctx->connectionID] = us;
 
     return ExitWithJSON(router::STATUS_OK);
 }

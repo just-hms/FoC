@@ -30,6 +30,7 @@ namespace repo {
         std::shared_ptr<sec::SymCrypt> sym;
         int historyLen;
     private:
+        std::tuple<entity::User, entity::Error> getUserByName(std::string username);
         entity::Error updateHistory(std::string username, entity::History * h);
         entity::Error updateBalances(entity::Transaction * t);
     public:

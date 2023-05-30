@@ -15,10 +15,10 @@ namespace entity {
     constexpr Error ERR_TIMEOUT =           -2;
     constexpr Error ERR_BROKEN =            -3;
     constexpr Error ERR_MESSAGE_TOO_LONG =  -5;
-    constexpr Error ERR_DURING_HANDSHAKE =  -5;
-    constexpr Error ERR_FILE_NOT_FOUND =    -6;
-    constexpr Error ERR_ALREADY_EXISTS =    -7;
-    constexpr Error ERR_UNATORIZED =        -8;
+    constexpr Error ERR_DURING_HANDSHAKE =  -6;
+    constexpr Error ERR_FILE_NOT_FOUND =    -7;
+    constexpr Error ERR_ALREADY_EXISTS =    -8;
+    constexpr Error ERR_UNATORIZED =        -9;
     
     
     constexpr size_t ACCEPTANCE_WINDOW =  5000;

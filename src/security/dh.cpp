@@ -46,6 +46,8 @@ std::tuple<EVP_PKEY*, entity::Error> sec::decodePeerKey(std::vector<uint8_t> enc
 //generate g and p
 std::tuple<std::vector<uint8_t>, entity::Error> sec::genDHparam(EVP_PKEY *&params) {
 
+    params = NULL;
+
     DH *tmp = DH_get_2048_256();
     std::vector<uint8_t>res;
 
