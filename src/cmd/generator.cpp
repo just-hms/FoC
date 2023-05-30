@@ -10,9 +10,17 @@ int main(){
     config::Config cfg;
 
     try {
+        // rm the old users.json
         std::system(("rm " + basePath + "users.json").c_str());
+        // create the transfer folder
         std::system(("mkdir -p " + basePath + "transfers").c_str());
+        // clear the old transfers
+        std::system(("rm " + basePath + "transfers/*").c_str());
+        // create the keys folder
         std::system(("mkdir -p " + basePath + "keys").c_str());
+        // clear the old keys
+        std::system(("rm " + basePath + "keys/*").c_str());
+
     } catch(bool res) {;}
 
     auto users = std::vector<entity::User>{

@@ -127,7 +127,7 @@ int main() {
     do {
         std::cout<<"Insert your username [max "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
         getline(std::cin, buffer);
-        res = sec::sanitize(buffer, 0);
+        res = sanitize::isUsername(buffer);
     } while(!res);
     uname = buffer;
 
@@ -163,7 +163,7 @@ int main() {
         do {
             std::cout<<"Insert your password [8 - "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
             getline(std::cin, buffer);
-            res = sec::sanitize(buffer, 1);
+            res = sanitize::isPassword(buffer);
         } while(!res);
         pwd = buffer;
         if(!(res = Login(&client, uname, pwd))) std::cout<<"Incorrect username or password, try again\r\n";
@@ -192,17 +192,17 @@ int main() {
                     do {
                         std::cout<<"Insert the username of the beneficiary [max "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
                         getline(std::cin, buffer);
-                        res = sec::sanitize(buffer, 0);
+                        res = sanitize::isUsername(buffer);
                     } while(!res);
                     beneficiary = buffer;
 
                     do {
                         std::cout<<"Insert the amount to transfer [max "<<sec::MAX_SANITIZATION_LEN-1<<" characters]: ";
                         getline(std::cin, buffer);
-                        res = sec::sanitize(buffer, 2);
+                        res = sanitize::isCurrency(buffer);
                     } while(!res);
 
-                    if(Transfer(&client, beneficiary, stoi(buffer))) std::cout<<"Transfer successful\r\n";
+                    if(Transfer(&client, beneficiary, stof(buffer))) std::cout<<"Transfer successful\r\n";
                     else std::cout<<"Transfer unsuccessful\r\n";
                 }
                 

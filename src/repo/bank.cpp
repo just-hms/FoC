@@ -55,6 +55,11 @@ entity::Error repo::BankRepo::Create(entity::User * u){
         }  
     }
 
+    // sanityze
+    if (!sanitize::isPassword(u->password) ||  !sanitize::isUsername(u->username)){
+        return entity::ERR_UNATORIZED;
+    }
+
     Json::Value createUserJson;
     createUserJson["accountID"] = u->balance.accountID;
     createUserJson["balance"] = u->balance.amount;
@@ -167,6 +172,9 @@ std::tuple<entity::Balance, entity::Error> repo::BankRepo::Balance(std::string u
 }
 
 std::tuple<bool, entity::Error> repo::BankRepo::Transfer(entity::Transaction* t){
+    if (t->from == t->to){
+        return {false, entity::ERR_NOT_FOUND};
+    }
     auto [us1, err1] = this->getUserByName(t->to);
     if(err1 != entity::ERR_OK) {
         return {false, entity::ERR_NOT_FOUND};
@@ -179,19 +187,16 @@ std::tuple<bool, entity::Error> repo::BankRepo::Transfer(entity::Transaction* t)
     // check if the current balance is above the requested one
     auto [senderBalance, err] = this->Balance(t->from);
     if (err != entity::ERR_OK && senderBalance.amount < t->amount){
-        std::cout<<senderBalance.amount<<" "<<t->amount<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
     auto [senderHistory, errH] = this->History(t->from);
     if (errH != entity::ERR_OK){
-        std::cout<<"3"<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
     auto [receiverHistory, errHistory2] = this->History(t->to);
     if (errH != entity::ERR_OK){
-        std::cout<<"4"<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
@@ -199,21 +204,18 @@ std::tuple<bool, entity::Error> repo::BankRepo::Transfer(entity::Transaction* t)
     senderHistory.push_back(*t);
     err = this->updateHistory(t->from, &senderHistory);
     if (err != entity::ERR_OK){
-        std::cout<<"5"<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
     receiverHistory.push_back(*t);
     err = this->updateHistory(t->to, &receiverHistory);
     if (err != entity::ERR_OK){
-        std::cout<<"6"<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
     // update the bank accounts of the interest users
     err = this->updateBalances(t);
     if (err != entity::ERR_OK){
-        std::cout<<"7"<<std::endl;
         return {false, entity::ERR_BROKEN};         
     }
 
