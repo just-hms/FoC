@@ -165,10 +165,10 @@ std::string router::Router::Handle(int sd, std::string message){
 
     auto out = ExitWithJSON(STATUS_NOT_FOUND); 
 
-    auto route = content["route"].asString();
-
+    std::string route = "";
     // this should happen in cas of bad formatting of the request
     try {
+        route = content["route"].asString();
         if (route == "login")           out = this->Login(&ctx);
         else if (route == "balance")    out = this->Balance(&ctx);
         else if (route == "transfer")   out = this->Transfer(&ctx);
@@ -178,7 +178,7 @@ std::string router::Router::Handle(int sd, std::string message){
     }
 
     // log the request
-    std::cout << "/" << route <<  std::string(10 - route.length(), ' ' ) << out["status"] << std::endl; 
+    std::cout << "/" << route <<  std::string(10 - route.size(), ' ' ) << out["status"] << std::endl; 
 
     Json::StreamWriterBuilder builder;
     std::string str = Json::writeString(builder, out);
