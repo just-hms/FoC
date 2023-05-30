@@ -1,4 +1,5 @@
 #include "router.h"
+#include <jsoncpp/json/value.h>
 
 Json::Value ExitWithJSON(int status, std::string message=""){
     Json::StreamWriterBuilder builder;
@@ -166,10 +167,15 @@ std::string router::Router::Handle(int sd, std::string message){
 
     auto route = content["route"].asString();
 
-    if (route == "login")           out = this->Login(&ctx);
-    else if (route == "balance")    out = this->Balance(&ctx);
-    else if (route == "transfer")   out = this->Transfer(&ctx);
-    else if (route == "history")    out = this->History(&ctx);
+    // this should happen in cas of bad formatting of the request
+    try {
+        if (route == "login")           out = this->Login(&ctx);
+        else if (route == "balance")    out = this->Balance(&ctx);
+        else if (route == "transfer")   out = this->Transfer(&ctx);
+        else if (route == "history")    out = this->History(&ctx);
+    } catch (Json::Exception ex) {
+        out = ExitWithJSON(STATUS_BAD_REQUEST); 
+    }
 
     // log the request
     std::cout << "/" << route <<  std::string(10 - route.length(), ' ' ) << out["status"] << std::endl; 
