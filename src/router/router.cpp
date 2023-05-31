@@ -71,7 +71,7 @@ Json::Value router::Router::Transfer(router::Context *ctx){
     }
 
     auto username = content["username"].asString();
-    auto amount = content["amount"].asInt();
+    auto amount = content["amount"].asFloat();
 
     auto t = entity::Transaction{
         .from = ctx->user->username,
@@ -173,7 +173,7 @@ std::string router::Router::Handle(int sd, std::string message){
         else if (route == "balance")    out = this->Balance(&ctx);
         else if (route == "transfer")   out = this->Transfer(&ctx);
         else if (route == "history")    out = this->History(&ctx);
-    } catch (Json::Exception ex) {
+    } catch (...) {
         out = ExitWithJSON(STATUS_BAD_REQUEST); 
     }
 

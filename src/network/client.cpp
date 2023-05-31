@@ -55,7 +55,11 @@ net::Client::Client(ClientOption* opt) noexcept {
 }
 
 // Connect tries to connect to the specified server
-entity::Error net::Client::Connect() noexcept{
+entity::Error net::Client::_connect() noexcept{
+    if(connected) return entity::ERR_OK;
+
+    connected = true;
+
     sockaddr_in server_address{};
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
@@ -73,17 +77,26 @@ entity::Error net::Client::Connect() noexcept{
 
 // Request tries to make a request to the server, returns an error in case of failing
 std::tuple<std::string,entity::Error> net::Client::Request(std::string message) noexcept{
-    
-    auto err = this->proto->Send(this->sd, message);
-
+    auto err = this->_connect();
     if (err != entity::ERR_OK) {
-        return {
-            "",
-            err
-        };
+        this->connected = false;
+        return {"",err};
+    }
+
+    err = this->proto->Send(this->sd, message);
+    if (err != entity::ERR_OK) {
+        this->connected = false;
+        close(this->sd);
+        return {"",err};
     }
     
-    return this->proto->Receive(this->sd);
+    auto [res, errRec] = this->proto->Receive(this->sd);
+     if (errRec != entity::ERR_OK) {
+        this->connected = false;
+        close(this->sd);
+    }
+
+    return {res, errRec};
 }
 
 // ~Client is the client distructor

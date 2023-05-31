@@ -1,5 +1,5 @@
 {
-    "SERVER_PORT" : 5245,
+    "SERVER_PORT" : 5247,
     "HISTORY_LEN" : 5,
     "SECRET" : "23br832f28f823nf932nf32mf23mfi023mf320m"
 }
