@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <memory>
 #include <vector>
+#include <signal.h>
 
 #include "./../cli/cli.h"
 #include "./../network/network.h"
@@ -26,7 +27,7 @@ void resetPrompt(){
     prompt.commands = {
         cli::Command{
             .cmd = Login,
-            .name = "login"
+            .name = "Login"
         },
     };
 }
@@ -37,7 +38,7 @@ void Login(){
     std::string username;
     getline(std::cin, username);
     if (!sanitize::isUsername(username)){
-        std::cout << "username is not correctly formatted" << std::endl;
+        std::cout << "Username is not correctly formatted" << std::endl;
         return;
     }
 
@@ -45,7 +46,7 @@ void Login(){
     std::string password;
     getline(std::cin, password);
     if (!sanitize::isPassword(password)){
-        std::cout << "password is not correctly formatted" << std::endl;
+        std::cout << "Password is not correctly formatted" << std::endl;
         return;
     }
     // build the request
@@ -59,7 +60,7 @@ void Login(){
     
     auto [res, err] = client->Request(str);
     if(err != entity::ERR_OK){
-        std::cout << "error during the request to the server" << std::endl;
+        std::cout << "Error during the request to the server" << std::endl;
         resetPrompt();
         return;
     } 
@@ -70,24 +71,24 @@ void Login(){
     reader.parse(res, json);
 
     if (json["status"].asInt() != router::STATUS_OK){
-        std::cout << "wrong username or password" << std::endl;
+        std::cout << "Wrong username or password" << std::endl;
         return;
     }
 
-    std::cout << "correctly logged in!!!" << std::endl;
+    std::cout << "Correctly logged in!!!" << std::endl;
 
     prompt.commands = std::vector<cli::Command>{
         cli::Command{
-            .cmd = Transfer,
-            .name = "tranfer",
+            .cmd = Balance,
+            .name = "Balance",
         },
         cli::Command{
-            .cmd = Balance,
-            .name = "balance",
+            .cmd = Transfer,
+            .name = "Transfer",
         },
         cli::Command{
             .cmd = History,
-            .name = "history",
+            .name = "History",
         },
     };
 }
@@ -98,7 +99,7 @@ void Transfer(){
     std::string beneficiary;
     getline(std::cin, beneficiary);
     if (!sanitize::isUsername(beneficiary)){
-        std::cout << "username is not correctly formatted" << std::endl;
+        std::cout << "Username is not correctly formatted" << std::endl;
         return;
     }
 
@@ -106,7 +107,7 @@ void Transfer(){
     std::string amount;
     getline(std::cin, amount);
     if (!sanitize::isCurrency(amount)){
-        std::cout << "the amount is not correctly formatted (try with: 10.20)" << std::endl;
+        std::cout << "The amount is not correctly formatted (try with: 10.20)" << std::endl;
         return;
     }
 
@@ -119,7 +120,7 @@ void Transfer(){
     
     auto [res, err] = client->Request(str);
     if(err != entity::ERR_OK){
-        std::cout << "error during the request to the server" << std::endl;
+        std::cout << "Error during the request to the server" << std::endl;
         resetPrompt();
         return;
     } 
@@ -129,11 +130,11 @@ void Transfer(){
     reader.parse(res, json);
 
     if (json["status"].asInt() != router::STATUS_OK){
-        std::cout << "transfer unsuccessfull" << std::endl;
+        std::cout << "Transfer unsuccessfull" << std::endl;
         return;
     }
 
-    std::cout << "transfer successfull" << std::endl;
+    std::cout << "Transfer successfull" << std::endl;
 }
 
 void History(){
@@ -144,7 +145,7 @@ void History(){
 
     auto [res, err] = client->Request(str);
     if(err != entity::ERR_OK) {
-        std::cout << "error during the request to the server" << std::endl;
+        std::cout << "Error during the request to the server" << std::endl;
         resetPrompt();
         return;
     } 
@@ -153,7 +154,7 @@ void History(){
     reader.parse(res, json);
 
     if (json["status"].asInt() != router::STATUS_OK){
-        std::cout << "bad request" << std::endl; 
+        std::cout << "Bad request" << std::endl; 
         return;
     }
 
@@ -174,7 +175,7 @@ void Balance(){
 
     auto [res, err] = client->Request(str);
     if(err != entity::ERR_OK) {
-        std::cout << "error during the request to the server" << std::endl;
+        std::cout << "Error during the request to the server" << std::endl;
         resetPrompt();
         return;
     }
@@ -183,16 +184,28 @@ void Balance(){
     reader.parse(res, json);
 
     if (json["status"].asInt() != router::STATUS_OK){
-        std::cout << "bad request" << std::endl; 
+        std::cout << "Bad request" << std::endl; 
         return;
     }
     
     std::cout << json["balance"].asFloat() << std::endl;
 }
 
+//handler in case the communication socket is closed
+void handler(int signal) {
+    std::cout<<"Server was shutdown, closing app..."<<std::endl;
+    sleep(2);
+    exit(1);
+}
+struct sigaction act;
+
 int main(int argc, char** argv){
+
+    act.sa_handler = handler;
+    sigaction(SIGPIPE, &act, NULL);
+
     if (argc != 2 || !sanitize::isUsername(argv[1])){
-        std::cout << "must provide the name of the private key file" << std::endl;
+        std::cout << "Must provide the name of the private key file" << std::endl;
         return 1;
     }
 

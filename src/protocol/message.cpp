@@ -12,6 +12,7 @@
 #include <errno.h>
 #include "protocol.h"
 #include <span>
+#include <unistd.h>
 
 // TODO: get MAX_MESSAGE_SIZE from config
 constexpr int MAX_MESSAGE_SIZE =    4096;

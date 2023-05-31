@@ -1,9 +1,6 @@
 #include "cli.h"
 #include <exception>
 
-
-    
-
 cli::Prompt::Prompt(){}
 
 void cli::Prompt::printMenu(uint index){

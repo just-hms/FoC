@@ -45,9 +45,9 @@ std::tuple<protocol::FunkySecuritySuite,entity::Error> protocol::FunkyProtocol::
 
     sscanf((char*) message.data(), "%30s %zu\n", &buffer, &timestamp);
 
-    //message has to be sent in the last ACCEPTANCE_WINDOW seconds
+    //message has to be sent within the ACCEPTANCE_WINDOW
     auto ts = time(NULL);
-    if(!(timestamp > ts - entity::ACCEPTANCE_WINDOW)) {
+    if(!(timestamp >= ts - entity::ACCEPTANCE_WINDOW && timestamp <= ts + entity::ACCEPTANCE_WINDOW)) {
         return {FunkySecuritySuite{}, entity::ERR_BROKEN};  
     }
 

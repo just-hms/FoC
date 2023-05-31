@@ -78,13 +78,9 @@ entity::Error net::Client::_connect() noexcept{
 // Request tries to make a request to the server, returns an error in case of failing
 std::tuple<std::string,entity::Error> net::Client::Request(std::string message) noexcept{
     auto err = this->_connect();
-    if (err != entity::ERR_OK) {
-        this->connected = false;
-        return {"",err};
-    }
-
     err = this->proto->Send(this->sd, message);
     if (err != entity::ERR_OK) {
+        sleep(1);
         this->connected = false;
         close(this->sd);
         return {"",err};

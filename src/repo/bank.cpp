@@ -186,8 +186,8 @@ std::tuple<bool, entity::Error> repo::BankRepo::Transfer(entity::Transaction* t)
 
     // check if the current balance is above the requested one
     auto [senderBalance, err] = this->Balance(t->from);
-    if (err != entity::ERR_OK && senderBalance.amount < t->amount){
-        return {false, entity::ERR_BROKEN};         
+    if (err != entity::ERR_OK || senderBalance.amount < t->amount){
+        return {false, entity::ERR_BROKEN};     
     }
 
     auto [senderHistory, errH] = this->History(t->from);

@@ -24,7 +24,7 @@ int TestDoubleFunky() {
     // create the client
     net::ClientOption client_opt{
         .server_ip = "127.0.0.1",
-        .port = cfg.ServerPort + 1,
+        .port = cfg.ServerPort + 2,
         .proto = &clientP,
         .timeout = 200,
     };
