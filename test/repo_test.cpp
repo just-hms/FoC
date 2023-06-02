@@ -5,13 +5,15 @@ int TestRepo() {
 
     repo::BankRepo r(DATA_PATH, cfg.Secret, cfg.HistoryLen);
 
-    std::system(("rm " + DATA_PATH + "users.json").c_str());
-    std::system(("mkdir -p " + DATA_PATH + "transfers").c_str());
-    std::system(("rm " + DATA_PATH + "transfers/*").c_str());
+    try{
+        std::system(("rm " + DATA_PATH + "users.json").c_str());
+        std::system(("mkdir -p " + DATA_PATH + "transfers").c_str());
+        std::system(("rm " + DATA_PATH + "transfers/*").c_str());
+    } catch(int) {;}
 
     auto us = entity::User{
         .username="kek",
-        .password="lolz",
+        .password="password",
         .balance = entity::Balance{
             .amount = 100,
             .accountID = uuid::New(),
@@ -22,7 +24,7 @@ int TestRepo() {
 
     us = entity::User{
         .username="rospo",
-        .password="lolz",
+        .password="password",
         .balance = entity::Balance{
             .amount = 70,
             .accountID = uuid::New(),
@@ -31,13 +33,13 @@ int TestRepo() {
     err = r.Create(&us);
     ASSERT_TRUE(err == entity::ERR_OK);
 
-    auto [_, errlogin] = r.Login("kek", "lolz");
+    auto [_, errlogin] = r.Login("kek", "password");
     ASSERT_TRUE(errlogin == entity::ERR_OK);
 
     auto t = entity::Transaction{
         .from = "kek",
         .to = "rospo",
-        .amount=20,
+        .amount = 20,
     };
     auto [res, errTransfer] = r.Transfer(&t);
     ASSERT_TRUE(res);
@@ -45,7 +47,7 @@ int TestRepo() {
     t = entity::Transaction{
         .from = "kek",
         .to = "rospo",
-        .amount=200000,
+        .amount = 200000,
     };
     auto [res2, errTransfer2] = r.Transfer(&t);
     ASSERT_FALSE(res2);

@@ -1,5 +1,5 @@
 CC=g++
-SOURCES=./src/config/*.cpp ./src/entity/*.cpp ./src/network/*.cpp ./src/protocol/*.cpp ./src/repo/*.cpp ./src/router/*.cpp ./src/security/*.cpp ./src/uuid/*.cpp
+SOURCES=./src/config/*.cpp ./src/entity/*.cpp ./src/network/*.cpp ./src/protocol/*.cpp ./src/repo/*.cpp ./src/router/*.cpp ./src/security/*.cpp ./src/uuid/*.cpp ./src/cli/*.cpp
 BUILD=./build
 FLAGS=-lcrypto -ljsoncpp -std=c++2a -w -lncurses
 

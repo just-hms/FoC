@@ -34,14 +34,14 @@ namespace net {
     class Client {
     private:
         int sd;
+        bool connected = false;
         std::string server_ip;
         int server_port;
         IProtocol* proto = nullptr;
-
+        entity::Error _connect() noexcept;
     public:
         Client(ClientOption *opt) noexcept;
         ~Client() noexcept;
-        entity::Error Connect() noexcept;
         std::tuple<std::string,entity::Error> Request(std::string message) noexcept;
     };
 

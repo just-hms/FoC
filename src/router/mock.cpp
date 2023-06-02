@@ -1,10 +1,13 @@
 #include "router.h"
 
-void router::MockPongRouter::Disconnect(int sd){}
+namespace router {
 
-std::string router::MockPongRouter::Handle(int sd, std::string message){
-    if (message != "ping"){
-        return "";
+    void MockPongRouter::Disconnect(int sd){}
+
+    std::string MockPongRouter::Handle(int sd, std::string message){
+        if (message != "ping"){
+            return "";
+        }
+        return "pong";
     }
-    return "pong";
 }

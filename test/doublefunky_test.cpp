@@ -24,7 +24,7 @@ int TestDoubleFunky() {
     // create the client
     net::ClientOption client_opt{
         .server_ip = "127.0.0.1",
-        .port = cfg.ServerPort + 1,
+        .port = cfg.ServerPort + 2,
         .proto = &clientP,
         .timeout = 200,
     };
@@ -54,7 +54,6 @@ int TestDoubleFunky() {
 
     // connnect the client
     
-    c.Connect();
     auto [res, err2] = c.Request("ping");
     ASSERT_EQUAL("pong", res);
 
@@ -62,8 +61,6 @@ int TestDoubleFunky() {
 
     // create the client
     net::Client c2(&client_opt);
-
-    c2.Connect();
 
     std::tie(res, err) = c2.Request("ping");
     ASSERT_EQUAL("pong", res);

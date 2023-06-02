@@ -30,7 +30,6 @@ int TestRawPingPong() {
 
     // connnect the client
     
-    c.Connect();
     auto [res, err] = c.Request("ping");
 
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -100,7 +99,6 @@ int TestFunkyPingPong() {
 
     // connnect the client
     
-    c.Connect();
     auto [res, err2] = c.Request("ping");
     ASSERT_EQUAL("pong", res);
 

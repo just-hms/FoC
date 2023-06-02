@@ -16,7 +16,9 @@
 #include <openssl/rand.h>
 #include <openssl/pem.h>
 #include <tuple>
+
 #include "../entity/entity.h"
+#include "./../defer/defer.h"
 
 namespace sec {
 
@@ -76,9 +78,12 @@ namespace sec {
     std::tuple<EVP_PKEY*, entity::Error> retrieveDHparam(std::vector<uint8_t> DHserialized);
     std::tuple<std::vector<uint8_t>, entity::Error> derivateDH(EVP_PKEY *your_dhkey, EVP_PKEY *peer_dhkey);
     std::tuple<std::vector<uint8_t>, entity::Error> keyFromSecret(std::vector<uint8_t> secret);
+}
 
-    bool sanitize(std::string, unsigned int);
-
+namespace sanitize {
+    bool isCurrency(const std::string& str);
+    bool isUsername(const std::string& str);
+    bool isPassword(const std::string& str);
 }
 
 #endif

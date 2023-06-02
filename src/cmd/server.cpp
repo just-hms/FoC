@@ -31,7 +31,5 @@ int main() {
 
     server.Listen();
 
-    std::cout<<"SERVER STARTED"<<std::endl;
-
     return 0;
 }
