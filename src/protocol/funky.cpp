@@ -44,7 +44,7 @@ namespace protocol {
         char buffer[sec::MAX_SANITIZATION_LEN];
         size_t timestamp;
 
-        sscanf((char*) message.data(), "%30s %zu\n", &buffer, &timestamp);
+        sscanf((char*) message.data(), "%30s %zu\n", buffer, &timestamp);
 
         //message has to be sent within the ACCEPTANCE_WINDOW
         auto ts = time(NULL);
@@ -73,7 +73,8 @@ namespace protocol {
         std::vector<uint8_t> DH;
         std::tie(DH, err) = sec::genDHparam(paramsDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-        
+        defer { EVP_PKEY_free(paramsDH); };
+
         std::tie(res, err) = symTMP.encrypt(DH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
@@ -81,12 +82,14 @@ namespace protocol {
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
         //  4. Generate and send to client the server's DH public key
-        sec::genDH(rightDH, paramsDH);
+        err = sec::genDH(rightDH, paramsDH);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        defer { EVP_PKEY_free(rightDH); };
+
 
         std::vector<uint8_t> encodedRightDH;
         std::tie(encodedRightDH, err) = sec::encodePeerKey(rightDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-        
         
         std::tie(res, err) = symTMP.encrypt(encodedRightDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
@@ -105,13 +108,13 @@ namespace protocol {
         EVP_PKEY * leftDH;
         std::tie(leftDH, err) = sec::decodePeerKey(encodedLeftDH); 
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        defer {EVP_PKEY_free(leftDH);};
 
         // 6. Derivate secret, generate key for SymCrypt
 
         std::vector<uint8_t> secret;
         std::tie(secret, err) = sec::derivateDH(rightDH, leftDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-
         
         std::vector<uint8_t> key;
         std::tie(key, err) = sec::keyFromSecret(secret);
@@ -155,11 +158,6 @@ namespace protocol {
 
         return {suite, entity::ERR_OK};
 
-    exit_with_err:
-        EVP_PKEY_free(paramsDH);
-        EVP_PKEY_free(rightDH);
-        EVP_PKEY_free(leftDH);
-        return {FunkySecuritySuite{}, err};
     }
 
 
@@ -207,6 +205,8 @@ namespace protocol {
         EVP_PKEY *paramsDH;
         std::tie(paramsDH, err) = sec::retrieveDHparam(DH);  
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        defer {EVP_PKEY_free(paramsDH);};
+
 
         // 4. Receive rightDH key
         std::tie(res, err) = RawReceive(sd);
@@ -218,9 +218,10 @@ namespace protocol {
 
         // 5. Send leftDH key
         EVP_PKEY *leftDH;
+        err = sec::genDH(leftDH, paramsDH);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        defer {EVP_PKEY_free(leftDH);};
         
-        sec::genDH(leftDH, paramsDH);
-
         std::vector<uint8_t> encodedLeftDH;
 
         std::tie(encodedLeftDH, err) = sec::encodePeerKey(leftDH);
@@ -229,11 +230,10 @@ namespace protocol {
         EVP_PKEY * rightDH;
         std::tie(rightDH, err) = sec::decodePeerKey(encodedRightDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-
+        defer { EVP_PKEY_free(rightDH); };
 
         std::tie(res, err) = symTMP.encrypt(encodedLeftDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-
 
         err = RawSend(sd, res);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
@@ -243,10 +243,6 @@ namespace protocol {
         std::vector<uint8_t> secret;
         std::tie(secret, err) = sec::derivateDH(leftDH, rightDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-
-        EVP_PKEY_free(paramsDH);
-        EVP_PKEY_free(rightDH);
-        EVP_PKEY_free(leftDH);
 
         std::vector<uint8_t> key;
         std::tie(key, err) = sec::keyFromSecret(secret);

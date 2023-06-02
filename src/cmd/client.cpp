@@ -65,7 +65,6 @@ void Login(){
         return;
     } 
 
-
     // read the response
     Json::Value json;
     reader.parse(res, json);

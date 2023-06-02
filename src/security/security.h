@@ -16,7 +16,9 @@
 #include <openssl/rand.h>
 #include <openssl/pem.h>
 #include <tuple>
+
 #include "../entity/entity.h"
+#include "./../defer/defer.h"
 
 namespace sec {
 
