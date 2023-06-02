@@ -15,6 +15,7 @@ namespace cli {
     class Prompt{
     private:
         void printMenu(uint index);
+        void runCommand(int index);
     public:
         std::vector<Command> commands;
         Prompt();

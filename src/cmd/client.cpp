@@ -23,7 +23,8 @@ void Transfer();
 void History();
 void Balance();
 
-void resetPrompt(){
+void handleServerError(){
+    std::cout << "Error during the request to the server..." << std::endl;
     prompt.commands = {
         cli::Command{
             .cmd = Login,
@@ -60,8 +61,7 @@ void Login(){
     
     auto [res, err] = client->Request(str);
     if(err != entity::ERR_OK){
-        std::cout << "Error during the request to the server" << std::endl;
-        resetPrompt();
+        handleServerError();
         return;
     } 
 
@@ -120,12 +120,10 @@ void Transfer(){
     
     auto [res, err] = client->Request(str);
     if(err != entity::ERR_OK){
-        std::cout << "Error during the request to the server" << std::endl;
-        resetPrompt();
+        handleServerError();
         return;
     } 
 
-    Json::Reader reader;
     Json::Value json;
     reader.parse(res, json);
 
@@ -145,8 +143,7 @@ void History(){
 
     auto [res, err] = client->Request(str);
     if(err != entity::ERR_OK) {
-        std::cout << "Error during the request to the server" << std::endl;
-        resetPrompt();
+        handleServerError();
         return;
     } 
 
@@ -175,8 +172,7 @@ void Balance(){
 
     auto [res, err] = client->Request(str);
     if(err != entity::ERR_OK) {
-        std::cout << "Error during the request to the server" << std::endl;
-        resetPrompt();
+        handleServerError();
         return;
     }
 
@@ -191,18 +187,9 @@ void Balance(){
     std::cout << json["balance"].asFloat() << std::endl;
 }
 
-//handler in case the communication socket is closed
-void handler(int signal) {
-    std::cout<<"Server was shutdown, closing app..."<<std::endl;
-    sleep(2);
-    exit(1);
-}
-struct sigaction act;
-
 int main(int argc, char** argv){
 
-    act.sa_handler = handler;
-    sigaction(SIGPIPE, &act, NULL);
+    signal(SIGPIPE, SIG_IGN);
 
     if (argc != 2 || !sanitize::isUsername(argv[1])){
         std::cout << "Must provide the name of the private key file" << std::endl;
@@ -228,6 +215,11 @@ int main(int argc, char** argv){
     auto c = net::Client(&clientOpt);
     client = &c;
 
-    resetPrompt();
+    prompt.commands = {
+        cli::Command{
+            .cmd = Login,
+            .name = "Login"
+        },
+    };    
     prompt.Run();
 }
