@@ -44,7 +44,9 @@ namespace protocol {
         char buffer[sec::MAX_SANITIZATION_LEN];
         size_t timestamp;
 
-        sscanf((char*) message.data(), "%30s %zu\n", buffer, &timestamp);
+        if (sscanf((char*) message.data(), "%30s %zu\n", buffer, &timestamp)< 2){
+            return {FunkySecuritySuite{}, entity::ERR_BROKEN};  
+        }
 
         //message has to be sent within the ACCEPTANCE_WINDOW
         auto ts = time(NULL);
