@@ -89,8 +89,14 @@ namespace protocol {
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
         // 4. Receive client's DH public key
-        std::vector<uint8_t> encodedLeftDH;
-        std::tie(encodedLeftDH, err) = RawReceive(sd);
+        std::tie(res, err) = RawReceive(sd);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+
+        std::vector<uint8_t> ds_leftDH, encodedLeftDH;
+        ds_leftDH.insert(ds_leftDH.end(), res.begin(), res.begin() + 512);
+        encodedLeftDH.insert(encodedLeftDH.end(), res.begin() + 512, res.end());
+        bool check;
+        std::tie(check, err) = asy.verify(encodedLeftDH, ds_leftDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
         EVP_PKEY * leftDH;
@@ -206,11 +212,16 @@ namespace protocol {
         defer {EVP_PKEY_free(leftDH);};
         
         std::vector<uint8_t> encodedLeftDH;
-
         std::tie(encodedLeftDH, err) = sec::encodePeerKey(leftDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-        err = RawSend(sd, encodedLeftDH);
+        std::tie(res, err) = asy.sign(encodedLeftDH);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        std::vector<uint8_t> signedDH;
+        signedDH.insert(signedDH.end(), res.begin(), res.end());
+        signedDH.insert(signedDH.end(), encodedLeftDH.begin(), encodedLeftDH.end());
+
+        err = RawSend(sd, signedDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
         // 5. Derivate secret, generate key for SymCrypt
