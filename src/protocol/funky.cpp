@@ -35,22 +35,9 @@ namespace protocol {
             this->dataPath+std::string(this->name +sec::PRIVK), 
             "", 
             this->secret
-        ); 
+        );
 
-        char buffer[sec::MAX_SANITIZATION_LEN];
-        size_t timestamp;
-
-        if (sscanf((char*) message.data(), "%30s %zu\n", buffer, &timestamp) < 2){
-            return {FunkySecuritySuite{}, entity::ERR_BROKEN};  
-        }
-
-        //message has to be sent within the ACCEPTANCE_WINDOW
-        auto now = time(NULL);
-        if(!(timestamp >= now - entity::ACCEPTANCE_WINDOW && timestamp <= now + entity::ACCEPTANCE_WINDOW)) {
-            return {FunkySecuritySuite{}, entity::ERR_BROKEN};  
-        }
-
-        asy.setPeerKey(this->dataPath + std::string(buffer) + sec::PUBK);
+        asy.setPeerKey(this->dataPath + std::string(message.begin(), message.end()) + sec::PUBK);
 
         //  2. Generate and send to client DH parameters
         EVP_PKEY *paramsDH, *rightDH;
@@ -135,7 +122,7 @@ namespace protocol {
 
         std::tie(res, err) = suite.sym->encrypt(hash);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-        
+
         err = RawSend(sd, res);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
         
@@ -168,11 +155,8 @@ namespace protocol {
             this->secret
         );
 
-        // 1. Send a message with the username and the current time encryted with RSA
-        auto now = time(NULL);
-        auto message = this->name + " " + std::to_string(now);
-
-        auto err = RawSend(sd, std::vector<uint8_t>(message.begin(), message.end()));
+        // 1. Send a message with the username
+        auto err = RawSend(sd, std::vector<uint8_t>(this->name.begin(), this->name.end()));
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
         // 2. Receive DH parameters
@@ -245,7 +229,7 @@ namespace protocol {
 
         //  6. MAC of all the session
         std::vector<uint8_t> HSsession;
-        HSsession.insert(HSsession.end(), message.begin(), message.end());
+        HSsession.insert(HSsession.end(), this->name.begin(), this->name.end());
         HSsession.insert(HSsession.end(), DH.begin(), DH.end());
         HSsession.insert(HSsession.end(), encodedRightDH.begin(), encodedRightDH.end());
         HSsession.insert(HSsession.end(), encodedLeftDH.begin(), encodedLeftDH.end());
@@ -303,7 +287,9 @@ namespace protocol {
 
         // generating hash for integrity
         std::vector<uint8_t> tmp;
-        auto ts = std::to_string(time(NULL));
+        secSuite.sym->incrementCounter(0);
+        auto ts = std::to_string(secSuite.sym->getCounter(0));
+        ts.insert(ts.begin(), 10 - ts.size(), '0');
         std::vector<uint8_t> timestamp = std::vector<uint8_t>(ts.begin(), ts.end());
         res.insert(res.begin(), timestamp.begin(), timestamp.end());
         
@@ -347,15 +333,13 @@ namespace protocol {
         std::tie(mac, err) = secSuite.mac->MAC(encrypted);
         if(expectedMac != mac) return {"", entity::ERR_BROKEN};
 
-        std::vector<uint8_t> ct, timestamp;
-        timestamp.insert(timestamp.end(), encrypted.begin(), encrypted.begin() + 10);
+        std::vector<uint8_t> ct, counter;
+        counter.insert(counter.end(), encrypted.begin(), encrypted.begin() + 10);
         ct.insert(ct.end(), encrypted.begin() + 10, encrypted.end());
 
-        int ts = stoi(std::string(timestamp.begin(), timestamp.end()));
-        int now = time(NULL);
-        if(!(ts >= now - entity::ACCEPTANCE_WINDOW && ts <= now + entity::ACCEPTANCE_WINDOW)) {
-            return {"", entity::ERR_BROKEN};
-        }
+        int counterINT = stoi(std::string(counter.begin(), counter.end()));
+        if(counterINT - 1 != secSuite.sym->getCounter(1)) return {"", entity::ERR_BROKEN};
+        secSuite.sym->incrementCounter(1);
         
         std::tie(res, err) = secSuite.sym->decrypt(ct);
         if(err != entity::ERR_OK) return {"", err};

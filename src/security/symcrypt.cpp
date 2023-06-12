@@ -8,8 +8,23 @@ namespace sec {
         if(k.size() < SYMMLEN/8) exit(1);
         k.resize(SYMMLEN/8);
         memcpy(&(this->key[0]), k.data(), SYMMLEN/8);
+        this->initializeCounter();
     }
 
+    void SymCrypt::initializeCounter() {
+        this->counters[0] = this->counters[1] = 0; 
+    }
+
+    void SymCrypt::incrementCounter(int index) {
+        if(index < 0 || index > 1) return;
+        this->counters[index]++;
+    }
+
+    unsigned int SymCrypt::getCounter(int index) {
+        if(index < 0 || index > 1) return 0;
+        return this->counters[index];
+    }
+    
     //encrypts pt by using the userID's session key
     std::tuple<std::vector<uint8_t>, entity::Error> SymCrypt::encrypt(std::vector<uint8_t> pt) {
         

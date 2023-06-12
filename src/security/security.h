@@ -44,9 +44,13 @@ namespace sec {
 
     class SymCrypt {
         unsigned char key[SYMMLEN/8];
+        unsigned int counters[2];
+        void initializeCounter();
 
         public:
             SymCrypt(std::vector<uint8_t> key);
+            void incrementCounter(int index);
+            unsigned int getCounter(int index);
             std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
             std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
