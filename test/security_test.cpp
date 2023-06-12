@@ -68,24 +68,26 @@ int TestRSA(){
     // AsymCrypt
     sec::AsymCrypt AS(
         DATA_PATH + "server" + sec::PRIVK, 
-        DATA_PATH + "client"+sec::PUBK, 
+        DATA_PATH + "client" + sec::PUBK, 
         "secret"
     );
     sec::AsymCrypt AC(
         DATA_PATH + "client" + sec::PRIVK,
-        DATA_PATH + "server"+sec::PUBK,
+        DATA_PATH + "server" + sec::PUBK,
         "secret"
     );
 
-    // one way
     std::vector<uint8_t> enc;
-    std::tie(enc, err) = AS.encrypt(expectedMess);
+    std::tie(enc, err) = AS.sign(expectedMess);
     ASSERT_TRUE(err == entity::ERR_OK);
-    std::vector<uint8_t> mess;
-    std::tie(mess, err)= AC.decrypt(enc);
-    ASSERT_TRUE(err == entity::ERR_OK);
+    bool res;
+    std::tie(res, err)= AC.verify(expectedMess, enc);
+    ASSERT_TRUE(res == true);
 
-    ASSERT_TRUE(expectedMess == mess);
+    std::tie(enc, err) = AC.sign(expectedMess);
+    ASSERT_TRUE(err == entity::ERR_OK);
+    std::tie(res, err)= AS.verify(expectedMess, enc);
+    ASSERT_TRUE(res == true);
 
     TEST_PASSED();
 }
