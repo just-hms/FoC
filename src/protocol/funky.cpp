@@ -105,25 +105,17 @@ namespace protocol {
         std::tie(secret, err) = sec::derivateDH(rightDH, leftDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
         
-        std::vector<uint8_t> key;
-        std::tie(key, err) = sec::keyFromSecret(secret);
+        std::vector<uint8_t> keys;
+        std::tie(keys, err) = sec::keyFromSecret(secret);
+        std::vector<uint8_t> seskey, mackey;
+        seskey.insert(seskey.end(), keys.begin(), keys.begin() + sec::SYMMLEN/8);
+        mackey.insert(mackey.end(), keys.begin() + sec::SYMMLEN/8, keys.end());
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-        suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key));
+        suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(seskey));
+        suite.mac = std::make_shared<sec::Hmac>(sec::Hmac(mackey));
 
-        //  6. Creation and delivery of MAC symmetric key
-        suite.mac = std::make_shared<sec::Hmac>(sec::Hmac());
-
-        auto MACk = suite.mac->getKey();
-
-        std::tie(res, err) = suite.sym->encrypt(MACk);
-        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-
-        err = RawSend(sd, res);
-        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-
-        //  7. MAC of the all session
-        
+        //  6. MAC of the all session
         std::vector<uint8_t> HSsession;
         HSsession.insert(HSsession.end(), message.begin(), message.end());
         HSsession.insert(HSsession.end(), DH.begin(), DH.end());
@@ -220,23 +212,17 @@ namespace protocol {
         std::tie(secret, err) = sec::derivateDH(leftDH, rightDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-        std::vector<uint8_t> key;
-        std::tie(key, err) = sec::keyFromSecret(secret);
+        std::vector<uint8_t> keys;
+        std::tie(keys, err) = sec::keyFromSecret(secret);
+        std::vector<uint8_t> seskey, mackey;
+        seskey.insert(seskey.end(), keys.begin(), keys.begin() + sec::SYMMLEN/8);
+        mackey.insert(mackey.end(), keys.begin() + sec::SYMMLEN/8, keys.end());
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-        suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(key));
+        suite.sym = std::make_shared<sec::SymCrypt>(sec::SymCrypt(seskey));
+        suite.mac = std::make_shared<sec::Hmac>(sec::Hmac(mackey));
 
-        // 6. Receive the key to be used in MAC 
-        std::tie(res, err) = RawReceive(sd);
-        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-        
-        std::vector<uint8_t>decryptedMacKey;  
-        std::tie(decryptedMacKey, err) = suite.sym->decrypt(res);
-        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-        
-        suite.mac = std::make_shared<sec::Hmac>(sec::Hmac(decryptedMacKey));
-
-        //  8. MAC of all the session
+        //  6. MAC of all the session
         std::vector<uint8_t> HSsession;
         HSsession.insert(HSsession.end(), message.begin(), message.end());
         HSsession.insert(HSsession.end(), DH.begin(), DH.end());

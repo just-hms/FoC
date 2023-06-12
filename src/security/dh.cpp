@@ -161,13 +161,15 @@ namespace sec {
 
     std::tuple<std::vector<uint8_t>, entity::Error> keyFromSecret(std::vector<uint8_t> secret) {
 
-        std::vector<uint8_t> k(SYMMLEN/8);
+        std::vector<uint8_t> k(SYMMLEN/8+16);
 
         auto [result, err] = Hash(std::string(secret.begin(), secret.end()));
         if (err != entity::ERR_OK) return {std::vector<uint8_t>(), err};
 
-        auto reskey = result.substr(0, SYMMLEN/8);
-        memcpy(k.data(), reskey.data(), SYMMLEN/8);
+        auto seskey = result.substr(0, SYMMLEN/8);
+        auto mackey = result.substr(result.size()-16, 16);
+        memcpy(k.data(), seskey.data(), SYMMLEN/8);
+        memcpy(k.data()+SYMMLEN/8, mackey.data(), 16);
 
         return {k, entity::ERR_OK};
     }
