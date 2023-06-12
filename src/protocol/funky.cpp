@@ -145,7 +145,10 @@ namespace protocol {
 
         std::vector<uint8_t> recvHash;
         std::tie(recvHash, err) = suite.sym->decrypt(res);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
+        HSsession.insert(HSsession.end(), hash.begin(), hash.end());
+        std::tie(hash, err) = suite.mac->MAC(HSsession);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
         
         if (recvHash != hash) return {FunkySecuritySuite{}, entity::ERR_DURING_HANDSHAKE};
@@ -248,8 +251,22 @@ namespace protocol {
         HSsession.insert(HSsession.end(), encodedLeftDH.begin(), encodedLeftDH.end());
         HSsession.insert(HSsession.end(), secret.begin(), secret.end());
 
-        //send mac
+        //receive mac and check integrity
+        std::tie(res, err) = RawReceive(sd);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+
+        std::vector<uint8_t> recvHash;
+        std::tie(recvHash, err) = suite.sym->decrypt(res);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+
         std::vector<uint8_t> hash;
+        std::tie(hash, err) = suite.mac->MAC(HSsession);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        
+        if (recvHash != hash) return {FunkySecuritySuite{}, entity::ERR_DURING_HANDSHAKE};
+
+        //send mac
+        HSsession.insert(HSsession.end(), recvHash.begin(), recvHash.end());
         std::tie(hash, err) = suite.mac->MAC(HSsession);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
@@ -258,17 +275,6 @@ namespace protocol {
         
         err = RawSend(sd, res);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-
-        //receive mac and check integrity
-        std::tie(res, err) = RawReceive(sd);
-        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-
-        std::vector<uint8_t> recvHash;
-        std::tie(recvHash, err) = suite.sym->decrypt(res);
-
-        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
-        
-        if (recvHash != hash) return {FunkySecuritySuite{}, entity::ERR_DURING_HANDSHAKE};
 
         return {suite, entity::ERR_OK};
     }
