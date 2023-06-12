@@ -21,7 +21,7 @@ namespace entity {
     constexpr Error ERR_UNATORIZED =        -9;
     
     
-    constexpr size_t ACCEPTANCE_WINDOW =  5000;
+    constexpr size_t ACCEPTANCE_WINDOW =  5;
 
     struct Transaction{
         std::string from;

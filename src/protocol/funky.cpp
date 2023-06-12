@@ -82,7 +82,6 @@ namespace protocol {
         std::tie(res, err) = asy.sign(encodedRightDH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
         signedDH.clear();
-        std::cout<<res.size()<<std::endl;
         signedDH.insert(signedDH.end(), res.begin(), res.end());
         signedDH.insert(signedDH.end(), encodedRightDH.begin(), encodedRightDH.end());
 
@@ -123,19 +122,27 @@ namespace protocol {
         HSsession.insert(HSsession.end(), encodedLeftDH.begin(), encodedLeftDH.end());
         HSsession.insert(HSsession.end(), secret.begin(), secret.end());
 
-        std::vector<uint8_t> expectedHash;
-        std::tie(expectedHash, err) = suite.mac->MAC(HSsession);
+        //send mac
+        std::vector<uint8_t> hash;
+        std::tie(hash, err) = suite.mac->MAC(HSsession);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+
+        std::tie(res, err) = suite.sym->encrypt(hash);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
         
+        err = RawSend(sd, res);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        
+        //receive mac and check integrity
         std::tie(res, err) = RawReceive(sd);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-        std::vector<uint8_t> hash;
-        std::tie(hash, err) = suite.sym->decrypt(res);
+        std::vector<uint8_t> recvHash;
+        std::tie(recvHash, err) = suite.sym->decrypt(res);
 
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
         
-        if (hash != expectedHash) return {FunkySecuritySuite{}, entity::ERR_DURING_HANDSHAKE};
+        if (recvHash != hash) return {FunkySecuritySuite{}, entity::ERR_DURING_HANDSHAKE};
 
         return {suite, entity::ERR_OK};
 
@@ -230,6 +237,7 @@ namespace protocol {
         HSsession.insert(HSsession.end(), encodedLeftDH.begin(), encodedLeftDH.end());
         HSsession.insert(HSsession.end(), secret.begin(), secret.end());
 
+        //send mac
         std::vector<uint8_t> hash;
         std::tie(hash, err) = suite.mac->MAC(HSsession);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
@@ -239,6 +247,17 @@ namespace protocol {
         
         err = RawSend(sd, res);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+
+        //receive mac and check integrity
+        std::tie(res, err) = RawReceive(sd);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+
+        std::vector<uint8_t> recvHash;
+        std::tie(recvHash, err) = suite.sym->decrypt(res);
+
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        
+        if (recvHash != hash) return {FunkySecuritySuite{}, entity::ERR_DURING_HANDSHAKE};
 
         return {suite, entity::ERR_OK};
     }
