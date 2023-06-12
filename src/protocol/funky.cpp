@@ -45,8 +45,8 @@ namespace protocol {
         }
 
         //message has to be sent within the ACCEPTANCE_WINDOW
-        auto ts = time(NULL);
-        if(!(timestamp >= ts - entity::ACCEPTANCE_WINDOW && timestamp <= ts + entity::ACCEPTANCE_WINDOW)) {
+        auto now = time(NULL);
+        if(!(timestamp >= now - entity::ACCEPTANCE_WINDOW && timestamp <= now + entity::ACCEPTANCE_WINDOW)) {
             return {FunkySecuritySuite{}, entity::ERR_BROKEN};  
         }
 
@@ -302,8 +302,12 @@ namespace protocol {
         if (err != entity::ERR_OK) return err;
 
         // generating hash for integrity
+        std::vector<uint8_t> tmp;
+        auto ts = std::to_string(time(NULL));
+        std::vector<uint8_t> timestamp = std::vector<uint8_t>(ts.begin(), ts.end());
+        res.insert(res.begin(), timestamp.begin(), timestamp.end());
+        
         std::vector<uint8_t> mac;
-
         std::tie(mac, err) = secSuite.mac->MAC(res);
         if (err != entity::ERR_OK) return err;
 
@@ -341,10 +345,19 @@ namespace protocol {
         
         std::vector<uint8_t> mac;
         std::tie(mac, err) = secSuite.mac->MAC(encrypted);
-        
         if(expectedMac != mac) return {"", entity::ERR_BROKEN};
+
+        std::vector<uint8_t> ct, timestamp;
+        timestamp.insert(timestamp.end(), encrypted.begin(), encrypted.begin() + 10);
+        ct.insert(ct.end(), encrypted.begin() + 10, encrypted.end());
+
+        int ts = stoi(std::string(timestamp.begin(), timestamp.end()));
+        int now = time(NULL);
+        if(!(ts >= now - entity::ACCEPTANCE_WINDOW && ts <= now + entity::ACCEPTANCE_WINDOW)) {
+            return {"", entity::ERR_BROKEN};
+        }
         
-        std::tie(res, err) = secSuite.sym->decrypt(encrypted);
+        std::tie(res, err) = secSuite.sym->decrypt(ct);
         if(err != entity::ERR_OK) return {"", err};
         
         return {

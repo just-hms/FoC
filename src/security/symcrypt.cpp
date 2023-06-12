@@ -1,5 +1,6 @@
 #include "security.h"
 #include <openssl/err.h>
+#include <string>
 
 namespace sec {
 

@@ -60,7 +60,7 @@ void Login(){
 
     
     auto [res, err] = client->Request(str);
-    if(err != entity::ERR_OK){
+    if(err != entity::ERR_OK) {
         handleServerError();
         return;
     } 
