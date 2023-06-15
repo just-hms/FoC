@@ -14,16 +14,13 @@ CFLAGS=-std=c++2a -w
 MODULES=$(wildcard src/*)
 
 define generate_deps
-    $(patsubst \
-		src/%.cpp,\
-		$(BUILD)/%.o,\
-		$(filter src/$(1)/%.cpp,$(SOURCES)))
+    $(wildcard src/$(1)/*.h*)
 endef
 
 .PHONY: build_tree test clean
 
 ducange: 
-	@echo $(wildcard src/config/*.h)
+	@echo $(call generate_deps,router)
 
 all: build
 
