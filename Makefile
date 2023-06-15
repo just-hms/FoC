@@ -26,8 +26,10 @@ all: build
 
 build: 	build_tree server client $(BUILD)/test
 
-build_tree: $(MODULES)
-	mkdir -v -p $(MODULES:src/%=$(BUILD)/%)
+build_tree: $(MODULES:src/%=$(BUILD)/%)
+
+$(MODULES:src/%=$(BUILD)/%):
+	mkdir -v -p $@
 
 $(BUILD)/config/%.o: src/config/%.cpp $(wildcard src/config/*.h)
 	$(CC) $(CFLAGS) -c -o $@ $<
