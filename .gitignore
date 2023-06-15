@@ -8,3 +8,5 @@ test/data/
 # ide
 .vscode/
 .idea/
+
+config.json
