@@ -24,12 +24,12 @@ ducange:
 
 all: build
 
-build: 	build_tree server client $(BUILD)/test
+build: 	build_tree server client $(BUILD)/test $(BUILD)/generator
 
 build_tree: $(MODULES:src/%=$(BUILD)/%)
 
 $(MODULES:src/%=$(BUILD)/%):
-	mkdir -v -p $@
+	@mkdir -v -p $@
 
 $(BUILD)/config/%.o: src/config/%.cpp $(wildcard src/config/*.h)
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -84,19 +84,24 @@ $(BUILD)/client: ./src/cmd/client.cpp $(OBJECTS)
 clean:
 	rm -rv $(BUILD)/*
 
-generator: $(BUILD)/generator
+generator_ex: build_tree $(BUILD)/generator
 $(BUILD)/generator: src/cmd/generator.cpp $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^ $(FLAGS)
+
+generator: generator_ex
 	@echo generating...
 	@./build/generator
 
-test/%test.o: peer/%test.cpp test.h
+$(BUILD)/%est.o: test/%est.cpp test/test.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(BUILD)/test: $(wildcard test/*test.cpp) $(OBJECTS)
+$(BUILD)/test: $(patsubst test/%.cpp,$(BUILD)/%.o,$(wildcard test/*test.cpp)) \
+		$(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^ $(FLAGS)
 
-test: build_tree $(BUILD)/test
+test_ex: build_tree $(BUILD)/test
+
+test: test_ex
 	@echo running tests...
 	@./build/test
 
