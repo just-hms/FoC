@@ -4,7 +4,7 @@ autonumber
     participant client
     participant server
     
-    client ->> server:        Username, <Username>_kc
+    client ->> server:        Username
     Note right of server:     - Retrieve the user public Key <br/> - Verify the signature
     Note right of server:     Generates DH params and Y_s
     server ->> client:        DH params, Y_s, <DH params, Y_s>_ks
