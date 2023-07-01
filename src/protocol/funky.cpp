@@ -12,14 +12,14 @@
 
 namespace protocol {
 
-    FunkyProtocol::FunkyProtocol(FunkyOptions * opt){
+    FunkyProtocol::FunkyProtocol(FunkyOptions * opt) {
         this->name = opt->name;
         this->peerName = opt->peerName;
         this->dataPath = opt->dataPath;
         this->secret = opt->secret;
     }
 
-    void FunkyProtocol::Disconnect(int sd){
+    void FunkyProtocol::Disconnect(int sd) {
         this->sessions.erase(sd);
     }
 
@@ -287,9 +287,10 @@ namespace protocol {
 
         // generating hash for integrity
         std::vector<uint8_t> tmp;
-        secSuite.sym->incrementCounter(0);
-        auto ts = std::to_string(secSuite.sym->getCounter(0));
-        ts.insert(ts.begin(), 10 - ts.size(), '0');
+        auto uintTS = secSuite.sym->incrementCounter(0);
+        if(uintTS == 0) return entity::ERR_BROKEN;
+        auto ts = std::to_string(uintTS);
+        ts.insert(ts.begin(), sec::CTR_LEN - ts.size(), '0');
         std::vector<uint8_t> timestamp = std::vector<uint8_t>(ts.begin(), ts.end());
         res.insert(res.begin(), timestamp.begin(), timestamp.end());
         
@@ -325,6 +326,7 @@ namespace protocol {
         if(err != entity::ERR_OK) return {"", err};
 
         //  extract hash and check for integrity
+        if(res.size() < sec::MAC_LEN) return {"", err};
         auto expectedMac = std::vector<uint8_t>(res.end()-sec::MAC_LEN , res.end());
         auto encrypted = std::vector<uint8_t>(res.begin(), res.end()-sec::MAC_LEN);
         //  decrypt using session key
@@ -334,10 +336,12 @@ namespace protocol {
         if(expectedMac != mac) return {"", entity::ERR_BROKEN};
 
         std::vector<uint8_t> ct, counter;
-        counter.insert(counter.end(), encrypted.begin(), encrypted.begin() + 10);
-        ct.insert(ct.end(), encrypted.begin() + 10, encrypted.end());
+        if(encrypted.size() < sec::CTR_LEN) return {"", err};
+        counter.insert(counter.end(), encrypted.begin(), encrypted.begin() + sec::CTR_LEN);
+        ct.insert(ct.end(), encrypted.begin() + sec::CTR_LEN, encrypted.end());
 
-        int counterINT = stoi(std::string(counter.begin(), counter.end()));
+        auto counterINT = stoul(std::string(counter.begin(), counter.end()));
+        if(counterINT == 0) return {"", entity::ERR_BROKEN};
         if(counterINT - 1 != secSuite.sym->getCounter(1)) return {"", entity::ERR_BROKEN};
         secSuite.sym->incrementCounter(1);
         

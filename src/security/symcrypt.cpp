@@ -15,13 +15,12 @@ namespace sec {
         this->counters[0] = this->counters[1] = 0; 
     }
 
-    void SymCrypt::incrementCounter(int index) {
-        if(index < 0 || index > 1) return;
+    unsigned int SymCrypt::incrementCounter(int index) {
         this->counters[index]++;
+        return this->counters[index];
     }
 
     unsigned int SymCrypt::getCounter(int index) {
-        if(index < 0 || index > 1) return 0;
         return this->counters[index];
     }
     

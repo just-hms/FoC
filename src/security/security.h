@@ -27,6 +27,7 @@ namespace sec {
     constexpr int HMAC_KEY_LEN =          16;
     constexpr int MAC_LEN =               64;
     constexpr int MAX_SANITIZATION_LEN =  31;
+    constexpr int CTR_LEN =               10;
     constexpr char const* PUBK =     "pubk.pem";
     constexpr char const* PRIVK =    "privk.pem";
 
@@ -49,7 +50,7 @@ namespace sec {
 
         public:
             SymCrypt(std::vector<uint8_t> key);
-            void incrementCounter(int index);
+            unsigned int incrementCounter(int index);
             unsigned int getCounter(int index);
             std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
             std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);

@@ -36,7 +36,7 @@ namespace net {
         int sd;
         bool connected = false;
         std::string server_ip;
-        int server_port;
+        int server_port, timeout;
         IProtocol* proto = nullptr;
         entity::Error _connect() noexcept;
     public:
