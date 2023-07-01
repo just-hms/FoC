@@ -38,7 +38,7 @@ namespace protocol {
         );
 
         asy.setPeerKey(this->dataPath + std::string(message.begin(), message.end()) + sec::PUBK);
-
+        
         //  2. Generate and send to client DH parameters
         EVP_PKEY *paramsDH, *rightDH;
 
@@ -116,11 +116,19 @@ namespace protocol {
         HSsession.insert(HSsession.end(), secret.begin(), secret.end());
 
         //send mac
-        std::vector<uint8_t> hash;
-        std::tie(hash, err) = suite.mac->MAC(HSsession);
+        std::vector<uint8_t> hsMac;
+        std::tie(hsMac, err) = suite.mac->MAC(HSsession);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        
+        std::vector<uint8_t> hsMacSign;
+        std::tie(hsMacSign, err) = asy.sign(hsMac);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        
+        std::vector<uint8_t> hsMacSignAndMac;
+        hsMacSignAndMac.insert(hsMacSignAndMac.end(), hsMac.begin(), hsMac.end());
+        hsMacSignAndMac.insert(hsMacSignAndMac.end(), hsMacSign.begin(), hsMacSign.end());
 
-        std::tie(res, err) = suite.sym->encrypt(hash);
+        std::tie(res, err) = suite.sym->encrypt(hsMacSignAndMac);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
         err = RawSend(sd, res);
@@ -130,15 +138,24 @@ namespace protocol {
         std::tie(res, err) = RawReceive(sd);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-        std::vector<uint8_t> recvHash;
-        std::tie(recvHash, err) = suite.sym->decrypt(res);
+
+        std::vector<uint8_t> recvHsMAC;
+        std::tie(recvHsMAC, err) = suite.sym->decrypt(res);
+        if (err != entity::ERR_OK || recvHsMAC.size() < 64) return {FunkySecuritySuite{}, entity::ERR_BROKEN};
+
+        // extract the signature
+        std::vector<uint8_t> lolzSign;
+        lolzSign.insert(lolzSign.end(), recvHsMAC.begin()+64, recvHsMAC.end());
+        recvHsMAC.resize(64);
+
+        std::tie(check, err) = asy.verify(recvHsMAC, lolzSign);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-        HSsession.insert(HSsession.end(), hash.begin(), hash.end());
-        std::tie(hash, err) = suite.mac->MAC(HSsession);
+        HSsession.insert(HSsession.end(), hsMac.begin(), hsMac.end());
+        std::tie(hsMac, err) = suite.mac->MAC(HSsession);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
         
-        if (recvHash != hash) return {FunkySecuritySuite{}, entity::ERR_DURING_HANDSHAKE};
+        if (recvHsMAC != hsMac) return {FunkySecuritySuite{}, entity::ERR_DURING_HANDSHAKE};
 
         return {suite, entity::ERR_OK};
 
@@ -242,22 +259,34 @@ namespace protocol {
         std::tie(res, err) = RawReceive(sd);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-        std::vector<uint8_t> recvHash;
-        std::tie(recvHash, err) = suite.sym->decrypt(res);
+        std::vector<uint8_t> recvHsMAC;
+        std::tie(recvHsMAC, err) = suite.sym->decrypt(res);
+        if (err != entity::ERR_OK || recvHsMAC.size() < 64) return {FunkySecuritySuite{}, entity::ERR_BROKEN};
+
+        std::vector<uint8_t> hsMacSign;
+        hsMacSign.insert(hsMacSign.end(), recvHsMAC.begin()+64, recvHsMAC.end());
+        recvHsMAC.resize(64);
+
+        std::tie(check, err) = asy.verify(recvHsMAC, hsMacSign);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-        std::vector<uint8_t> hash;
-        std::tie(hash, err) = suite.mac->MAC(HSsession);
+        std::vector<uint8_t> hsMac;
+        std::tie(hsMac, err) = suite.mac->MAC(HSsession);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
         
-        if (recvHash != hash) return {FunkySecuritySuite{}, entity::ERR_DURING_HANDSHAKE};
+        if (recvHsMAC != hsMac) return {FunkySecuritySuite{}, entity::ERR_DURING_HANDSHAKE};
 
         //send mac
-        HSsession.insert(HSsession.end(), recvHash.begin(), recvHash.end());
-        std::tie(hash, err) = suite.mac->MAC(HSsession);
+        HSsession.insert(HSsession.end(), recvHsMAC.begin(), recvHsMAC.end());
+        std::tie(hsMac, err) = suite.mac->MAC(HSsession);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
-        std::tie(res, err) = suite.sym->encrypt(hash);
+        // add the signature
+        std::tie(hsMacSign, err) = asy.sign(hsMac);
+        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        hsMac.insert(hsMac.end(), hsMacSign.begin(), hsMacSign.end());
+
+        std::tie(res, err) = suite.sym->encrypt(hsMac);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
         
         err = RawSend(sd, res);
