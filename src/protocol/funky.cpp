@@ -77,7 +77,7 @@ namespace protocol {
 
         // 4. Receive client's DH public key
         std::tie(res, err) = RawReceive(sd);
-        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        if (err != entity::ERR_OK || res.size() < 512) return {FunkySecuritySuite{}, entity::ERR_BROKEN};
 
         std::vector<uint8_t> ds_leftDH, encodedLeftDH;
         ds_leftDH.insert(ds_leftDH.end(), res.begin(), res.begin() + 512);
@@ -160,13 +160,16 @@ namespace protocol {
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
 
         // 2. Receive DH parameters
+
         std::vector<uint8_t> res;
         std::tie(res, err) = RawReceive(sd);
-        if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
+        if (err != entity::ERR_OK || res.size() < 512) return {FunkySecuritySuite{}, entity::ERR_BROKEN};
+        
 
         std::vector<uint8_t> ds_DH, DH;
         ds_DH.insert(ds_DH.end(), res.begin(), res.begin() + 512);
         DH.insert(DH.end(), res.begin() + 512, res.end());
+
         bool check;
         std::tie(check, err) = asy.verify(DH, ds_DH);
         if (err != entity::ERR_OK) return {FunkySecuritySuite{}, err};
