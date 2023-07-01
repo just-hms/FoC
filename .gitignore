@@ -1,10 +1,12 @@
-# exclude files but keep build folder
-build/*
-!build/.gitkeep
 
-data/*
-!data/.gitkeep
+# generated folders
+build/
+data/
+test/data/
 
 # ide
 .vscode/
 .idea/
+
+# secret file
+config.json

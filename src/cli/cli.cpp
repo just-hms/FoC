@@ -42,11 +42,11 @@ void cli::Prompt::Run() {
     while (true) {
         refresh();
         system("clear");
-        printMenu(index);
         int commandsCount = commands.size();
         if (index < 0 || index >= commandsCount) {
             index = 0;
         }
+        printMenu(index);
         int input = getch();
         switch (input) {
             case 10: // ENTER

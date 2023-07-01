@@ -16,63 +16,8 @@ namespace sec {
     }
 
     //encrypts mes using userID's public key
-    std::tuple<std::vector<uint8_t>, entity::Error> AsymCrypt::encrypt(std::vector<uint8_t> mess) {
+    std::tuple<std::vector<uint8_t>, entity::Error> AsymCrypt::sign(std::vector<uint8_t> mess) {
 
-        if(this->pubk.size() == 0) {
-            std::cerr<<"Peer key hasn't been set yet"<<std::endl;
-            return {std::vector<uint8_t>(), entity::ERR_FILE_NOT_FOUND};
-        }
-
-        FILE *fp = fopen((this->pubk).c_str(), "r");
-        if(fp == NULL) {
-            std::cerr<<"Couldn't open AsymCrypt public key file "<<(this->pubk).c_str() << std::endl;
-            return {std::vector<uint8_t>(), entity::ERR_FILE_NOT_FOUND};
-        }
-        defer { fclose(fp); };
-
-        EVP_PKEY *key = PEM_read_PUBKEY(fp, NULL, NULL, NULL);
-        if(key == NULL) {
-            std::cerr<<"Couldn't read AsymCrypt public key"<<std::endl;
-            return {std::vector<uint8_t>(), entity::ERR_BROKEN};
-        }
-        defer { EVP_PKEY_free(key); };
-        
-        EVP_PKEY_CTX *ctx;
-        if(!(ctx = EVP_PKEY_CTX_new(key, NULL))) {
-            std::cerr<<"Unable to create a contextfor AsymCrypt"<<std::endl;
-            return {std::vector<uint8_t>(), entity::ERR_BROKEN};
-        }
-        defer {EVP_PKEY_CTX_free(ctx);};
-
-        if(EVP_PKEY_encrypt_init(ctx) <= 0) {
-            std::cerr<<"Unable to initialize context for AsymCrypt"<<std::endl;
-            return {std::vector<uint8_t>(), entity::ERR_BROKEN};
-        }
-
-        if(EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
-            std::cerr<<"Unable to set padding for AsymCrypt"<<std::endl;
-            return {std::vector<uint8_t>(), entity::ERR_BROKEN};
-        }
-
-        //determine output buffer length
-        size_t ctlen;
-        if(EVP_PKEY_encrypt(ctx, NULL, &ctlen, mess.data(), mess.size()) <= 0) {
-            std::cout<<"Unable to determine ct buffer length"<<std::endl;
-            return {std::vector<uint8_t>(), entity::ERR_BROKEN};
-        }
-        
-        // get the result
-        std::vector<uint8_t> ct(ctlen);
-        if(EVP_PKEY_encrypt(ctx, ct.data(), &ctlen, mess.data(), mess.size()) <= 0) {
-            std::cerr<<"Error during AsymCrypt encryption"<<std::endl;
-            return {std::vector<uint8_t>(), entity::ERR_BROKEN};
-        }
-
-        return {ct, entity::ERR_OK};
-    }
-
-    //decrypts mess using the server's private key
-    std::tuple<std::vector<uint8_t>, entity::Error> AsymCrypt::decrypt(std::vector<uint8_t> ct) {
         FILE *fp = fopen((this->privk).c_str(), "r");
         if(fp == NULL) {
             std::cerr<<"Couldn't open AsymCrypt private key file " << this->privk <<std::endl;
@@ -88,37 +33,79 @@ namespace sec {
         }
         defer { EVP_PKEY_free(key); };
 
-        EVP_PKEY_CTX *ctx;
-        if(!(ctx = EVP_PKEY_CTX_new(key, NULL))) {
-            std::cerr<<"Unable to create a context for AsymCrypt"<<std::endl;
+        EVP_MD_CTX *ctx;
+        if(!(ctx = EVP_MD_CTX_new())) {
+            std::cerr<<"Unable to create a context to sign"<<std::endl;
             return {std::vector<uint8_t>(), entity::ERR_BROKEN};
         }
-        defer {EVP_PKEY_CTX_free(ctx);};
+        defer {EVP_MD_CTX_free(ctx);};
 
-        if(EVP_PKEY_decrypt_init(ctx) <= 0) {
-            std::cerr<<"Unable to initialize context for AsymCrypt"<<std::endl;
-            return {std::vector<uint8_t>(), entity::ERR_BROKEN};
-        }
-
-        if(EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
-            std::cerr<<"Unable to set padding for AsymCrypt"<<std::endl;
+        if(EVP_SignInit(ctx, EVP_sha256()) <= 0) {
+            std::cerr<<"Unable to initialize context to sign"<<std::endl;
             return {std::vector<uint8_t>(), entity::ERR_BROKEN};
         }
 
-        size_t ptlen;
-        if(EVP_PKEY_decrypt(ctx, NULL, &ptlen, ct.data(), ct.size()) <= 0) {
-            std::cerr<<"Unable to determine pt buffer length"<<std::endl;
+        if(EVP_SignUpdate(ctx, mess.data(), mess.size()) <= 0) {
+            std::cout<<"Unable to update digital signature"<<std::endl;
             return {std::vector<uint8_t>(), entity::ERR_BROKEN};
         }
-
-        std::vector<uint8_t> pt(ptlen);
-        if(EVP_PKEY_decrypt(ctx, pt.data(), &ptlen, ct.data(), ct.size()) < 0) {
-            std::cerr<<"Error during AsymCrypt decryption"<<std::endl;
+        
+        unsigned int sign_len = EVP_PKEY_size(key);
+        std::vector<uint8_t> signed_msg(sign_len);
+        if (EVP_SignFinal(ctx, signed_msg.data(), &sign_len, key) <= 0) {
+            std::cout<<"Unable to finalize digital signature"<<std::endl;
             return {std::vector<uint8_t>(), entity::ERR_BROKEN};
         }
+        signed_msg.resize(sign_len);
 
-        pt.resize(ptlen);
+        return {signed_msg, entity::ERR_OK};
+    }
 
-        return {pt, entity::ERR_OK};
+    //decrypts mess using the server's private key
+    std::tuple<bool, entity::Error> AsymCrypt::verify(std::vector<uint8_t> msg, std::vector<uint8_t> signature) {
+
+        if(this->pubk.size() == 0) {
+            std::cerr<<"Peer key hasn't been set yet"<<std::endl;
+            return {false, entity::ERR_FILE_NOT_FOUND};
+        }
+
+        FILE *fp = fopen((this->pubk).c_str(), "r");
+        if(fp == NULL) {
+            std::cerr<<"Couldn't open AsymCrypt public key file "<<(this->pubk).c_str() << std::endl;
+            return {false, entity::ERR_FILE_NOT_FOUND};
+        }
+        defer { fclose(fp); };
+
+        EVP_PKEY *key = PEM_read_PUBKEY(fp, NULL, NULL, NULL);
+        if(key == NULL) {
+            std::cerr<<"Couldn't read AsymCrypt public key"<<std::endl;
+            return {false, entity::ERR_BROKEN};
+        }
+        defer { EVP_PKEY_free(key); };
+
+        EVP_MD_CTX *ctx;
+        if(!(ctx = EVP_MD_CTX_new())) {
+            std::cerr<<"Unable to create a context to sign"<<std::endl;
+            return {false, entity::ERR_BROKEN};
+        }
+        defer {EVP_MD_CTX_free(ctx);};
+
+        if(EVP_VerifyInit(ctx, EVP_sha256()) <= 0) {
+            std::cerr<<"Unable to initialize context to sign"<<std::endl;
+            return {false, entity::ERR_BROKEN};
+        }
+
+        if(EVP_VerifyUpdate(ctx, msg.data(), msg.size()) <= 0) {
+            std::cerr<<"Unable to verify"<<std::endl;
+            return {false, entity::ERR_BROKEN};
+        }
+
+        if(EVP_VerifyFinal(ctx, signature.data(), signature.size(), key) == 1) {
+            return {true, entity::ERR_OK};
+        }
+        else {
+            std::cerr<<"Digital signature verification failed"<<std::endl;
+            return {false, entity::ERR_BROKEN};
+        }
     }
 }

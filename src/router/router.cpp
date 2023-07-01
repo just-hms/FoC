@@ -12,7 +12,7 @@ namespace router {
     }
 
     Json::Value Router::Login(Context *ctx){
-        if (ctx->user != nullptr){
+        if (ctx->user != nullptr) {
             return ExitWithJSON(STATUS_UNAUTHORIZED);
         }
 

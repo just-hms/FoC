@@ -27,6 +27,7 @@ namespace sec {
     constexpr int HMAC_KEY_LEN =          16;
     constexpr int MAC_LEN =               64;
     constexpr int MAX_SANITIZATION_LEN =  31;
+    constexpr int CTR_LEN =               10;
     constexpr char const* PUBK =     "pubk.pem";
     constexpr char const* PRIVK =    "privk.pem";
 
@@ -38,15 +39,19 @@ namespace sec {
         public:
             AsymCrypt(std::string path_private_key, std::string path_public_key_peer, std::string password);
             void setPeerKey(std::string path_public_key_peer);
-            std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
-            std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
+            std::tuple<std::vector<uint8_t>, entity::Error> sign(std::vector<uint8_t> msg);
+            std::tuple<bool, entity::Error> verify(std::vector<uint8_t> msg, std::vector<uint8_t> signature);
     };
 
     class SymCrypt {
         unsigned char key[SYMMLEN/8];
+        unsigned int counters[2];
+        void initializeCounter();
 
         public:
             SymCrypt(std::vector<uint8_t> key);
+            unsigned int incrementCounter(int index);
+            unsigned int getCounter(int index);
             std::tuple<std::vector<uint8_t>, entity::Error> encrypt(std::vector<uint8_t> plaintext);
             std::tuple<std::vector<uint8_t>, entity::Error> decrypt(std::vector<uint8_t> ciphertext);
     };
@@ -63,6 +68,7 @@ namespace sec {
 
     //UTILITY FUNCTIONS
 
+    std::string hexEncode(char *s, int len);
     std::tuple<std::string, entity::Error> Hash(std::string data);
     std::tuple<std::string, entity::Error> HashAndSalt(std::string password, std::string salt = "");
     bool VerifyHash(std::string hashAndSalt, std::string password);

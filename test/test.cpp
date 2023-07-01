@@ -1,6 +1,8 @@
 #include "test.h"
 
 int main(){
+    std::system(("mkdir -p " + DATA_PATH).c_str());
+    
     return
     TestRawPingPong()   || 
     TestFunkyPingPong() ||

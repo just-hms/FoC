@@ -145,7 +145,7 @@ namespace repo {
 
         // check the password
         auto hashedPassword = us.password;
-        if (!sec::VerifyHash(hashedPassword,password)){
+        if (!sec::VerifyHash(hashedPassword, password)) {
             return {nullptr, entity::ERR_UNATORIZED};        
         }
 

@@ -12,30 +12,39 @@ namespace net {
     //
     // you must a port and ip of the server to connect to and a protocol to use 
     Client::Client(ClientOption* opt) noexcept {
+        
         if(opt->proto == nullptr){
             std::cerr << "You must specify a protocol " << std::endl;
             exit(EXIT_FAILURE);
         }
 
+        this->server_ip = opt->server_ip;
+        this->server_port = opt->port;
         this->proto = opt->proto;
+        this->timeout = opt->timeout;
 
+    }
+
+    // Connect tries to connect to the specified server
+    entity::Error Client::_connect() noexcept{
+        if(connected) return entity::ERR_OK;
+        
         this->sd = socket(
             AF_INET, 
             SOCK_STREAM,
             0
         );
 
-
         if (this->sd == -1) {
             std::cerr << "Failed to create socket " << std::endl;
             exit(EXIT_FAILURE);
         }
 
-        if (opt->timeout > 0) {
+        if (this->timeout > 0) {
             
             timeval recive_timeout = {
                 .tv_sec = 0,
-                .tv_usec = opt->timeout * 1000
+                .tv_usec = this->timeout * 1000
             };
 
             auto res = setsockopt(
@@ -51,14 +60,6 @@ namespace net {
                 exit(EXIT_FAILURE);
             }
         }
-
-        this->server_ip = opt->server_ip;
-        this->server_port = opt->port;
-    }
-
-    // Connect tries to connect to the specified server
-    entity::Error Client::_connect() noexcept{
-        if(connected) return entity::ERR_OK;
 
         connected = true;
 
@@ -82,6 +83,7 @@ namespace net {
         auto err = this->_connect();
         err = this->proto->Send(this->sd, message);
         if (err != entity::ERR_OK) {
+            this->proto->Disconnect(sd); 
             this->connected = false;
             close(this->sd);
             return {"",err};
@@ -90,6 +92,7 @@ namespace net {
         auto [res, errRec] = this->proto->Receive(this->sd);
         if (errRec != entity::ERR_OK) {
             this->connected = false;
+            this->proto->Disconnect(sd); 
             close(this->sd);
         }
 

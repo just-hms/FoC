@@ -1,5 +1,6 @@
 #include "security.h"
 #include <openssl/err.h>
+#include <string>
 
 namespace sec {
 
@@ -7,8 +8,22 @@ namespace sec {
         if(k.size() < SYMMLEN/8) exit(1);
         k.resize(SYMMLEN/8);
         memcpy(&(this->key[0]), k.data(), SYMMLEN/8);
+        this->initializeCounter();
     }
 
+    void SymCrypt::initializeCounter() {
+        this->counters[0] = this->counters[1] = 0; 
+    }
+
+    unsigned int SymCrypt::incrementCounter(int index) {
+        this->counters[index]++;
+        return this->counters[index];
+    }
+
+    unsigned int SymCrypt::getCounter(int index) {
+        return this->counters[index];
+    }
+    
     //encrypts pt by using the userID's session key
     std::tuple<std::vector<uint8_t>, entity::Error> SymCrypt::encrypt(std::vector<uint8_t> pt) {
         

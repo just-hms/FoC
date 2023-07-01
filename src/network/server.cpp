@@ -157,8 +157,8 @@ namespace net {
 
         // call the disconnected callback to make the application 
         // know that the client disconnnected
-        this->router->Disconnect(sd);
-        this->proto->Disconnect(sd);               
+        this->proto->Disconnect(sd);
+        this->router->Disconnect(sd);              
     }
 
     void Server::Stop() noexcept{
