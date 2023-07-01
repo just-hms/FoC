@@ -28,7 +28,6 @@ namespace sec {
         EVP_PKEY * key = PEM_read_PrivateKey(fp, NULL, NULL, (void*) this->privk_pwd.data());
         if(key == NULL) {
             std::cerr<<"Couldn't read AsymCrypt private key"<<  std::endl;
-            fclose(fp);
             return {std::vector<uint8_t>(), entity::ERR_BROKEN};
         }
         defer { EVP_PKEY_free(key); };
