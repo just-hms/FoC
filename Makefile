@@ -1,107 +1,64 @@
-CC=g++
+# Define your compiler and flags
+CC := g++
+CFLAGS:=-std=c++2a -w
+FLAGS:=-lcrypto -ljsoncpp -lncurses
 
-SOURCES=$(wildcard src/config/*.cpp src/entity/*.cpp src/network/*.cpp \
-	src/protocol/*.cpp src/repo/*.cpp src/router/*.cpp \
-	src/security/*.cpp src/uuid/*.cpp src/cli/*.cpp)
-
-BUILD?=build
-
-OBJECTS=$(SOURCES:src/%.cpp=$(BUILD)/%.o)
-
-FLAGS=-lcrypto -ljsoncpp -lncurses
-CFLAGS=-std=c++2a -w
-
-MODULES=$(wildcard src/*)
-
-define generate_deps
-    $(wildcard src/$(1)/*.h*)
-endef
-
-.PHONY: build_tree test clean
-
-ducange: 
-	@echo $(call generate_deps,router)
-
-all: build
-
-build: 	build_tree server client $(BUILD)/test $(BUILD)/generator
-
-build_tree: $(MODULES:src/%=$(BUILD)/%)
-
-$(MODULES:src/%=$(BUILD)/%):
-	@mkdir -v -p $@
-
-$(BUILD)/config/%.o: src/config/%.cpp $(wildcard src/config/*.h)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(BUILD)/entity/%.o: src/entity/%.cpp $(wildcard src/entity/*.h)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(BUILD)/network/%.o: src/network/%.cpp $(wildcard src/network/*.h) \
-		$(call generate_deps,entity)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(BUILD)/protocol/%.o: src/protocol/%.cpp $(wildcard src/protocol/*.h) \
-		$(call generate_deps,entity) \
-		$(call generate_deps,security) \
-		$(call generate_deps,network) \
-		$(call generate_deps,defer)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(BUILD)/repo/%.o: src/repo/%.cpp $(wildcard src/repo/*.h) \
-		$(call generate_deps,entity) \
-		$(call generate_deps,router) \
-		$(call generate_deps,security) \
-		$(call generate_deps,uuid)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(BUILD)/router/%.o: src/router/%.cpp $(wildcard src/router/*.h) \
-		$(call generate_deps,entity) \
-		$(call generate_deps,network)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(BUILD)/security/%.o: src/security/%.cpp $(wildcard src/security/*.h) \
-		$(call generate_deps,defer)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(BUILD)/uuid/%.o: src/uuid/%.cpp $(wildcard src/uuid/*.h)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(BUILD)/cli/%.o: src/cli/%.cpp $(wildcard src/cli/*.h) \
-		$(call generate_deps,entity)
-	$(CC) $(CFLAGS) -c -o $@ $<
+# Define build directory
+BUILD_DIR := build
 
 
-# Main executables
-server: $(BUILD)/server
-$(BUILD)/server: ./src/cmd/server.cpp $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^ $(FLAGS)
+# If the first argument is "run"... then set everything else as arguments
+ifeq (run,$(firstword $(MAKECMDGOALS)))
+  # use the rest as arguments for "run"
+  RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  # ...and turn them into do-nothing targets
+  $(eval $(RUN_ARGS):;@:)
+endif
 
-client: $(BUILD)/client
-$(BUILD)/client: ./src/cmd/client.cpp $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^ $(FLAGS)
+# List your source files
+SRC := $(shell find src -name '*.cpp' ! -name '*_test.cpp' ! -wholename '*/cmd/*')
+CMD_SRC := $(shell find src/cmd -name '*.cpp')
+TEST_SRC := /tmp/test.cpp
 
+# Define corresponding object files in the build directory
+OBJ := $(SRC:%.cpp=$(BUILD_DIR)/%.o)
+CMD_OBJ := $(CMD_SRC:%.cpp=$(BUILD_DIR)/%.o)
+TEST_OBJ := $(TEST_SRC:%.cpp=$(BUILD_DIR)/%.o)
+
+# Default target
+all: test build run
+
+# Test target
+test: $(BUILD_DIR)/test
+	@$(BUILD_DIR)/test
+
+# Rule to generate test.cpp and compile it into an object file
+$(BUILD_DIR)/test: $(OBJ) $(TEST_OBJ)
+	@$(CC) $(CFLAGS) -o $@ $^ $(FLAGS)
+
+$(TEST_OBJ): $(TEST_SRC)
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAGS) -c $< -o $@ $(FLAGS)
+
+# Rule to run test.sh and generate test.cpp
+$(TEST_SRC):
+	@./test.sh > $(TEST_SRC)
+
+# Build cmds target
+build: $(CMD_OBJ) $(OBJ)
+	@$(foreach cmd, $(CMD_OBJ), $(CC) $(CFLAGS) -o $(BUILD_DIR)/$(notdir $(cmd:.o=)) $(cmd) $(OBJ) $(FLAGS);)
+
+# Run target
+run: build
+	@$(BUILD_DIR)/$(RUN_ARGS)
+
+# General rule for object files
+$(BUILD_DIR)/%.o: %.cpp
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAGS) -c $< -o $@ $(FLAGS)
+
+# Clean target to remove generated files
 clean:
-	rm -rv $(BUILD)/*
+	@rm -rf $(BUILD_DIR) $(TEST_SRC)
 
-generator_ex: build_tree $(BUILD)/generator
-$(BUILD)/generator: src/cmd/generator.cpp $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^ $(FLAGS)
-
-generator: generator_ex
-	@echo generating...
-	@./build/generator
-
-$(BUILD)/%est.o: test/%est.cpp test/test.h
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(BUILD)/test: $(patsubst test/%.cpp,$(BUILD)/%.o,$(wildcard test/*test.cpp)) \
-		$(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^ $(FLAGS)
-
-test_ex: build_tree $(BUILD)/test
-
-test: test_ex
-	@echo running tests...
-	@./build/test
-
+.PHONY: all test build run clean $(TEST_OBJ) $(BUILD_DIR)/test

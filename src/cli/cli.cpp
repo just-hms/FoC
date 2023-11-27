@@ -1,17 +1,19 @@
 #include "cli.h"
+
 #include <exception>
 
 cli::Prompt::Prompt() {}
 
 void cli::Prompt::printMenu(uint index) {
-    std::cout << "Use arrows to move across the options, press enter to confirm and q to quit\r\n";
+    std::cout << "Use arrows to move across the options, press enter to "
+                 "confirm and q to quit\r\n";
     for (uint i = 0; i < commands.size(); i++) {
-        std::cout << ((i == index) ? "●" : "○") << " " << commands[i].name << "\r\n";
+        std::cout << ((i == index) ? "●" : "○") << " " << commands[i].name
+                  << "\r\n";
     }
 }
 
 void cli::Prompt::runCommand(int index) {
-
     // resetTerminal
     refresh();
     endwin();
@@ -21,7 +23,8 @@ void cli::Prompt::runCommand(int index) {
     try {
         commands[index].cmd();
     } catch (std::exception& ex) {
-        std::cout << "Caught exception running " << commands[index].name << ": " << ex.what() << std::endl;
+        std::cout << "Caught exception running " << commands[index].name << ": "
+                  << ex.what() << std::endl;
     }
 
     // wait for a key press
@@ -49,7 +52,7 @@ void cli::Prompt::Run() {
         printMenu(index);
         int input = getch();
         switch (input) {
-            case 10: // ENTER
+            case 10:  // ENTER
                 runCommand(index);
                 break;
             case KEY_UP:
@@ -60,7 +63,7 @@ void cli::Prompt::Run() {
                 system("clear");
                 index = (index + 1 >= commandsCount) ? index : index + 1;
                 break;
-            case 113: // QUIT
+            case 113:  // QUIT
                 endwin();
                 exit(0);
             default:

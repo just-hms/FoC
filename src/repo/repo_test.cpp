@@ -1,35 +1,35 @@
-#include "test.h"
+#include "./../repo/repo.h"
+
+#include "../test/test.h"
+#include "./../config/config.h"
+#include "./../entity/entity.h"
+#include "./../uuid/uuid.h"
 
 int TestRepo() {
+    auto DATA_PATH = std::string("/tmp/test-repo/");
+    std::system(("mkdir -p " + DATA_PATH + "transfers").c_str());
+    defer { std::system(("rm -rf " + DATA_PATH).c_str()); };
+
     config::Config cfg;
 
     repo::BankRepo r(DATA_PATH, cfg.Secret, cfg.HistoryLen);
 
-    try{
-        std::system(("rm " + DATA_PATH + "users.json").c_str());
-        std::system(("mkdir -p " + DATA_PATH + "transfers").c_str());
-        std::system(("rm " + DATA_PATH + "transfers/*").c_str());
-    } catch(int) {;}
+    auto us = entity::User{.username = "kek",
+                           .password = "password",
+                           .balance = entity::Balance{
+                               .amount = 100,
+                               .accountID = uuid::New(),
+                           }};
 
-    auto us = entity::User{
-        .username="kek",
-        .password="password",
-        .balance = entity::Balance{
-            .amount = 100,
-            .accountID = uuid::New(),
-        }
-    };
     auto err = r.Create(&us);
     ASSERT_TRUE(err == entity::ERR_OK);
 
-    us = entity::User{
-        .username="rospo",
-        .password="password",
-        .balance = entity::Balance{
-            .amount = 70,
-            .accountID = uuid::New(),
-        }
-    };
+    us = entity::User{.username = "rospo",
+                      .password = "password",
+                      .balance = entity::Balance{
+                          .amount = 70,
+                          .accountID = uuid::New(),
+                      }};
     err = r.Create(&us);
     ASSERT_TRUE(err == entity::ERR_OK);
 
@@ -60,7 +60,6 @@ int TestRepo() {
     ASSERT_TRUE(history[0].to == "rospo");
     ASSERT_TRUE(history[0].amount == 20);
 
-    
     auto [historyRospo, errRospo] = r.History("rospo");
     ASSERT_TRUE(errRospo == entity::ERR_OK);
 
@@ -73,5 +72,5 @@ int TestRepo() {
     ASSERT_TRUE(errBalanceRospo == entity::ERR_OK);
     ASSERT_TRUE(balance.amount == 90);
 
-    TEST_PASSED();
+    return 0;
 }

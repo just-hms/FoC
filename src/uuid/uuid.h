@@ -2,5 +2,5 @@
 #include <sstream>
 
 namespace uuid {
-    std::string New();
+std::string New();
 }

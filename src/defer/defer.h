@@ -2,20 +2,19 @@
 
 // Define a dummy struct to be used as a placeholder
 struct defer_dummy {};
-// Define a template struct to store a function object and execute it on destruction
+// Define a template struct to store a function object and execute it on
+// destruction
 template <class F>
 struct deferrer {
     F f;
     // Destructor of deferrer, executes the stored function
-    ~deferrer() {
-      	f();
-    }
+    ~deferrer() { f(); }
 };
 
 // Overload the * operator to create instances of deferrer
 template <class F>
 deferrer<F> operator*(defer_dummy, F f) {
-  	return {f};
+    return {f};
 }
 
 // Macro to generate a unique identifier based on line number
@@ -27,11 +26,11 @@ deferrer<F> operator*(defer_dummy, F f) {
 
 #endif
 
-/* 
+/*
 
 // USAGE EXAMPLE
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 int main() {
     std::ofstream file("example.txt");

@@ -3,10 +3,9 @@
 
 #include "./../config/config.h"
 #include "./../network/network.h"
-#include "./../router/router.h"
 #include "./../protocol/protocol.h"
 #include "./../repo/repo.h"
-
+#include "./../router/router.h"
 
 int main() {
     config::Config cfg;
@@ -20,7 +19,7 @@ int main() {
     protocol::FunkyProtocol p(&fOpt);
     repo::BankRepo repo("./data/", cfg.Secret, cfg.HistoryLen);
     router::Router router(&repo);
-    
+
     net::ServerOption opt{
         .port = cfg.ServerPort,
         .proto = &p,
@@ -29,6 +28,12 @@ int main() {
 
     net::Server server(&opt);
 
+    if (server.Bind() != 0) {
+        std::cerr << "Failed to bind to port " << cfg.ServerPort << std::endl;
+        return 1;
+    }
+
+    std::cout << "server starting at port :" << cfg.ServerPort << std::endl;
     server.Listen();
 
     return 0;
